@@ -23,12 +23,19 @@ class GameController extends AbstractController
     #[Route('/start', name: 'game_start')]
     public function start(SessionInterface $session, EntityManagerInterface $em): Response
     {
-        // crée un joueur seulement si pas déjà créé
+        // Crée un joueur seulement si pas déjà créé
         if (!$session->has('player_id')) {
             $player = new Player();
-            $player->setName("Héros");
+            $player->setName("Héros")
+                   ->setHp(100)        // ⚡ Initialisation obligatoire
+                   ->setAttack(10)     // ⚡ Initialisation obligatoire
+                   ->setDefense(5)     // ⚡ Initialisation obligatoire
+                   ->setGold(0)        // ⚡ Initialisation obligatoire
+                   ->setExperience(0); // ⚡ Initialisation obligatoire
+
             $em->persist($player);
             $em->flush();
+
             $session->set('player_id', $player->getId());
         }
 

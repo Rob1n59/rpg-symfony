@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Exploration</title>
+</head>
+<body>
+    <h1>Exploration</h1>
+
+    <h2>Lieu actuel : {{ location.name }}</h2>
+    <p>{{ location.description }}</p>
+    <p>Niveau de danger : {{ location.dangerLevel }}</p>
+
+    <ul>
+        <li><a href="{{ path('game_encounter') }}">Explorer et rencontrer un ennemi</a></li>
+        <li><a href="{{ path('game_menu') }}">Retour au menu principal</a></li>
+    </ul>
+</body>
+</html>
