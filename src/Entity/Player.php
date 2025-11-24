@@ -13,31 +13,98 @@ class Player
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50)]
-    private string $name;
+    #[ORM\Column(length: 25)]
+    private ?string $name = null;
 
     #[ORM\Column]
-    private int $hp = 100;
+    private ?int $hp = null;
 
     #[ORM\Column]
-    private int $maxHp = 100;
+    private ?int $attack = null;
 
     #[ORM\Column]
-    private int $attack = 10;
+    private ?int $defense = null;
 
     #[ORM\Column]
-    private int $defense = 5;
+    private ?int $gold = null;
 
     #[ORM\Column]
-    private int $gold = 0;
+    private ?int $experience = null;
 
-    #[ORM\Column]
-    private int $experience = 0;
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
 
-    #[ORM\Column]
-    private int $level = 1;
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
 
-    public function getId(): ?int { return $this->id; }
+    public function setName(string $name): static
+    {
+        $this->name = $name;
 
-    // --- getters/setters automatiques (tu peux les générer via VSCode) ---
+        return $this;
+    }
+
+    public function getHp(): ?int
+    {
+        return $this->hp;
+    }
+
+    public function setHp(int $hp): static
+    {
+        $this->hp = $hp;
+
+        return $this;
+    }
+
+    public function getAttack(): ?int
+    {
+        return $this->attack;
+    }
+
+    public function setAttack(int $attack): static
+    {
+        $this->attack = $attack;
+
+        return $this;
+    }
+
+    public function getDefense(): ?int
+    {
+        return $this->defense;
+    }
+
+    public function setDefense(int $defense): static
+    {
+        $this->defense = $defense;
+
+        return $this;
+    }
+
+    public function getGold(): ?int
+    {
+        return $this->gold;
+    }
+
+    public function setGold(int $gold): static
+    {
+        $this->gold = $gold;
+
+        return $this;
+    }
+
+    public function getExperience(): ?int
+    {
+        return $this->experience;
+    }
+
+    public function setExperience(int $experience): static
+    {
+        $this->experience = $experience;
+
+        return $this;
+    }
 }

@@ -13,18 +13,68 @@ class Item
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50)]
-    private string $name;
+    #[ORM\Column(length: 100)]
+    private ?string $name = null;
 
-    #[ORM\Column(length: 200)]
-    private string $description;
+    #[ORM\Column(length: 255)]
+    private ?string $description = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $attackBonus = 0;
+    #[ORM\Column]
+    private ?int $attackBonus = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $defenseBonus = 0;
+    #[ORM\Column]
+    private ?int $hpBonus = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $hpBonus = 0;
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(string $description): static
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getAttackBonus(): ?int
+    {
+        return $this->attackBonus;
+    }
+
+    public function setAttackBonus(int $attackBonus): static
+    {
+        $this->attackBonus = $attackBonus;
+
+        return $this;
+    }
+
+    public function getHpBonus(): ?int
+    {
+        return $this->hpBonus;
+    }
+
+    public function setHpBonus(int $hpBonus): static
+    {
+        $this->hpBonus = $hpBonus;
+
+        return $this;
+    }
 }
