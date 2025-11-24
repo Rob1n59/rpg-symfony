@@ -1,0 +1,60 @@
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background: url("public/images/background.jpg") no-repeat center center/cover;
+    font-family: "Georgia", serif;
+}
+
+.menu-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    backdrop-filter: blur(2px);
+}
+
+.title {
+    font-size: 3.2rem;
+    font-weight: bold;
+    color: #f5e6c5;
+    text-shadow: 2px 2px 4px #000;
+    margin-bottom: 40px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.btn {
+    display: block;
+    width: 320px;
+    padding: 15px 25px;
+    background: rgba(60, 35, 10, 0.85);
+    border: 3px solid #3bbdcc;
+    border-radius: 10px;
+    color: #f0e7d8;
+    text-decoration: none;
+    font-size: 1.4rem;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 1px 1px 2px #000;
+    transition: 0.25s;
+}
+
+.btn:hover {
+    background: rgba(100, 60, 20, 0.9);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px #3bbdcc;
+}
+
+.footer {
+    margin-top: 60px;
+    color: #f2e3c4;
+    font-size: 1rem;
+    opacity: 0.9;
+}
