@@ -108,17 +108,56 @@ class GameController extends AbstractController
 
 
     #[Route('/explore', name: 'game_explore')]
-    public function explore(
-        SessionInterface $session,
-        LocationRepository $locationRepository
-    ): Response {
-        $locations = $locationRepository->findAll();
-        $location = $locations[array_rand($locations)];
+public function explore(
+    SessionInterface $session
+): Response {
 
-        return $this->render('game/explore.html.twig', [
-            'location' => $location
-        ]);
+    // Vérifie qu'un joueur existe en session
+    if (!$session->has('player_id')) {
+        return $this->redirectToRoute('choose_hero');
     }
+
+    // Lieux définis manuellement pour la carte interactive
+    $locations = [
+        [
+            'id' => 1,
+            'name' => 'Forêt d’Alden',
+            'description' => 'Une forêt dense où rôdent des créatures sauvages.',
+            'danger' => 'Faible',
+            'x' => 22,
+            'y' => 34
+        ],
+        [
+            'id' => 2,
+            'name' => 'Ruines d’Eldamar',
+            'description' => 'Ancienne cité magique, hantée par des esprits.',
+            'danger' => 'Élevé',
+            'x' => 55,
+            'y' => 48
+        ],
+        [
+            'id' => 3,
+            'name' => 'Montagnes du Nord',
+            'description' => 'Région glacée abritant des monstres puissants.',
+            'danger' => 'Très Élevé',
+            'x' => 75,
+            'y' => 18
+        ],
+        [
+            'id' => 4,
+            'name' => 'Plaine Verdoyante',
+            'description' => 'Zone paisible, idéale pour commencer une aventure.',
+            'danger' => 'Très faible',
+            'x' => 40,
+            'y' => 70
+        ]
+    ];
+
+    return $this->render('game/explore.html.twig', [
+        'locations' => $locations
+    ]);
+}
+
 
     #[Route('/explore/encounter', name: 'game_encounter')]
     public function encounter(

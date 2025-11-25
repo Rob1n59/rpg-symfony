@@ -29,7 +29,12 @@ body {
     font-size: 3.2em;
     font-weight: bold;
     color: #FFD700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-shadow:
+        -3px -3px 0 #000,   /* Contour noir plus épais pour un titre plus grand */
+        3px -3px 0 #000,
+        -3px 3px 0 #000,
+        3px 3px 0 #000,
+        0 0 15px rgba(0, 0, 0, 0.9);
     margin: 0; /* Réinitialise les marges pour Flexbox */
     letter-spacing: 2px;
     text-align: center; /* S'assure que le texte est centré */

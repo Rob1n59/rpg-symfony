@@ -1,0 +1,133 @@
+/* === CONTENEUR PRINCIPAL === */
+body {
+    margin: 0;
+    padding: 0;
+    background: #2b1d14 !important;
+    font-family: "Georgia", serif;
+}
+
+
+.explore-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+    color: #FFD700;
+    font-family: "Georgia", serif;
+}
+
+/* === MAP === */
+.map-container {
+    position: relative;
+    width: 70%;
+}
+
+/* Image de la carte */
+.world-map {
+    width: 105%;
+    border-radius: 5%;
+    border: 5px solid #8B4513;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+}
+
+/* === MARQUEURS SUR LA CARTE === */
+.map-marker {
+    width: 22px;
+    height: 22px;
+    background-color: #FFD700;
+    border-radius: 50%;
+    border: 3px solid #5C4033;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    box-shadow:
+        0 0 10px rgba(255, 215, 0, 0.8),
+        0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.map-marker:hover {
+    transform: translate(-50%, -50%) scale(1.3);
+    background-color: orange;
+}
+
+/* === PANNEAU D’INFO (STYLE BOIS) === */
+.location-panel {
+    width: 30%;
+    padding: 25px;
+    border-radius: 12px;
+
+    /* Style BOIS comme tes boutons */
+    background-color: #5C4033;
+    border: 5px solid #8B4513;
+
+    /* Texte doré comme le menu */
+    color: #FFD700;
+    text-shadow: 1px 1px 2px black;
+
+    /* Ombres */
+    box-shadow:
+        0 8px 0 0 #4A3228,
+        0 15px 30px rgba(0, 0, 0, 0.6);
+
+    /* Pour cacher au début */
+    display: none;
+}
+
+/* Titres dans le panneau */
+.location-panel h2 {
+    margin-top: 0;
+    font-size: 2rem;
+    text-align: center;
+    color: #FFD700;
+    text-shadow: 2px 2px 4px black;
+}
+
+.location-panel p {
+    font-size: 1.2rem;
+}
+
+/* === BOUTON D’EXPLORATION — STYLE IDENTIQUE AU MENU === */
+#explore-button {
+    display: block;
+    width: 100%;
+    padding: 15px 25px;
+    margin-top: 20px;
+
+    font-family: 'Georgia', serif;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+
+    /* Styles bois */
+    background-color: #5C4033;
+    border: 5px solid #8B4513;
+    border-radius: 8px;
+
+    color: #FFD700;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
+
+    box-shadow:
+        0 8px 0 0 #4A3228,
+        0 15px 30px rgba(0, 0, 0, 0.6);
+
+    transition: 0.2s ease;
+}
+
+#explore-button:hover {
+    background-color: #6A4E3A;
+    transform: translateY(4px);
+    box-shadow:
+        0 4px 0 0 #4A3228,
+        0 8px 15px rgba(0, 0, 0, 0.4);
+}
+
+#explore-button:active {
+    background-color: #4A3228;
+    transform: translateY(6px);
+    box-shadow:
+        0 2px 0 0 #33241A,
+        0 4px 8px rgba(0, 0, 0, 0.3);
+}

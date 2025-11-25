@@ -1,19 +1,62 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Exploration</title>
-</head>
-<body>
-    <h1>Exploration</h1>
+{% extends 'base.html.twig' %}
 
-    <h2>Lieu actuel : {{ location.name }}</h2>
-    <p>{{ location.description }}</p>
-    <p>Niveau de danger : {{ location.dangerLevel }}</p>
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/explore.css') }}">
+{% endblock %}
 
-    <ul>
-        <li><a href="{{ path('game_encounter') }}">Explorer et rencontrer un ennemi</a></li>
-        <li><a href="{{ path('game_menu') }}">Retour au menu principal</a></li>
-    </ul>
-</body>
-</html>
+{% block body %}
+<div class="explore-container">
+
+    <div class="map-container">
+        <img src="{{ asset('images/world_map.png') }}" class="world-map" alt="Carte du monde">
+
+        {% for loc in locations %}
+            <div
+                class="map-marker"
+                data-name="{{ loc.name }}"
+                data-description="{{ loc.description }}"
+                data-danger="{{ loc.danger }}"
+                style="left: {{ loc.x }}%; top: {{ loc.y }}%;"
+            ></div>
+        {% endfor %}
+    </div>
+
+    <div class="location-panel">
+        <h2 id="loc-name">Sélectionnez un lieu</h2>
+        <p id="loc-description">Cliquez sur un point de la carte pour plus d'informations.</p>
+        <p id="loc-danger"></p>
+        <button id="explore-button" class="hidden">Explorer ce lieu</button>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const markers = document.querySelectorAll(".map-marker");
+
+    const panel = document.querySelector(".location-panel");
+    const locName = document.getElementById("loc-name");
+    const locDescription = document.getElementById("loc-description");
+    const locDanger = document.getElementById("loc-danger");
+    const exploreBtn = document.getElementById("explore-button");
+
+    markers.forEach(marker => {
+        marker.addEventListener("click", () => {
+
+            // Affiche le panneau si caché
+            panel.style.display = "block";
+
+            // Mise à jour du contenu
+            locName.textContent = marker.dataset.name;
+            locDescription.textContent = marker.dataset.description;
+            locDanger.textContent = "Danger : " + marker.dataset.danger;
+
+            // Affiche le bouton
+            exploreBtn.classList.remove("hidden");
+        });
+    });
+});
+</script>
+
+
+{% endblock %}
