@@ -1,140 +1,55 @@
 body {
-   background: url("../images/background.jpg") no-repeat center center/cover;
-    text-align: center;
-    color: white;
-    font-family: "Georgia";
-    /* Ajout pour centrer le contenu verticalement si nécessaire, sinon la supprimer */
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; /* Aligne le contenu en haut */
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background: url("../images/background.jpg") no-repeat center center/cover;
+    font-family: "Georgia", serif;
+    position: relative; /* Pour positionner les éléments absolus comme le bouton retour */
+    display: flex; /* Le body devient un conteneur flex */
+    justify-content: center; /* Centre horizontalement le .main-content-wrapper */
+    align-items: center; /* Centre verticalement le .main-content-wrapper */
+    overflow: hidden; /* Pour éviter les scrollbars si le contenu déborde */
 }
 
-/* Nouveau style pour le titre principal */
+/* NOUVEAU: Conteneur principal pour tous les éléments du centre */
+.main-content-wrapper {
+    display: flex;
+    flex-direction: column; /* Les éléments s'empilent verticalement */
+    align-items: center; /* Centre les éléments enfants (titre, zone sélecteur, formulaire) */
+    gap: 40px; /* Espace entre le titre, la zone de sélection/stats et le formulaire */
+    z-index: 5; /* Assure qu'il est au-dessus du background */
+    width: 100%; /* Permet aux enfants de prendre de la place */
+    max-width: 1200px; /* Limite la largeur du contenu pour éviter l'étirement excessif */
+    padding: 20px; /* Espace interne pour éviter que le contenu ne touche les bords */
+    box-sizing: border-box; /* Inclut padding et border dans la largeur/hauteur */
+}
+
+/* Style du titre principal - PLUS DE POSITION ABSOLUTE ICI */
 .main-title {
-    font-size: 3em; /* Ajustez la taille selon vos préférences */
-    color: #FFD700; /* Une couleur dorée pour ressortir, similaire à l'image */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Ombre pour la lisibilité */
-    margin-top: 50px; /* Espace du haut de la page */
-    margin-bottom: 30px; /* Espace avant le sélecteur de héros */
-    position: absolute; /* Pour le positionner au-dessus de la carte */
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%; /* Pour s'assurer qu'il prend toute la largeur pour le centrage */
-    z-index: 10; /* S'assurer qu'il est au-dessus d'autres éléments */
-}
-
-
-.selector {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 200px; /* Ajusté pour laisser de la place au titre */
-    position: relative; /* Pour positionner l'image du héros et le nom */
-    z-index: 5; /* Moins que le titre */
-}
-
-.hero-display img {
-    width: 220px;
-    border: 5px solid #6E4C2A; /* Bordure similaire à l'image */
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-}
-
-#prev, #next {
-    background: rgba(0,0,0,0.4);
-    border: none;
-    font-size: 40px;
-    padding: 10px 20px;
-    cursor: pointer;
-    color: white;
-    position: absolute; /* Pour les positionner par rapport au sélecteur */
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 6;
-}
-
-#prev {
-    left: -80px; /* Ajustez la distance par rapport au héros */
-}
-
-#next {
-    right: -80px; /* Ajustez la distance par rapport au héros */
-}
-
-/* Nouveau style pour le nom du héros */
-.hero-name {
-    font-size: 1.8em;
+    font-size: 3.2em;
+    font-weight: bold;
     color: #FFD700;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-    margin-top: 15px; /* Espace entre l'image et le nom */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    margin: 0; /* Réinitialise les marges pour Flexbox */
+    letter-spacing: 2px;
+    text-align: center; /* S'assure que le texte est centré */
 }
 
-
-.confirm-form {
-    margin-top: 20px; /* Réduit l'espace pour rapprocher du héros */
-    position: relative; /* Pour le positionnement du formulaire */
-    z-index: 5;
-    background: rgba(0, 0, 0, 0.5); /* Fond semi-transparent pour le formulaire */
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #6E4C2A;
-    display: flex; /* Utilise flexbox pour aligner le label et l'input */
-    flex-direction: column; /* Organise les éléments en colonne */
-    align-items: center; /* Centre les éléments horizontalement */
-    width: fit-content; /* S'adapte au contenu */
-    margin-left: auto; /* Centre le formulaire */
-    margin-right: auto; /* Centre le formulaire */
-}
-
-.confirm-form label {
-    font-size: 1.2em;
-    color: #FFD700; /* Couleur dorée pour le label */
-    margin-bottom: 10px; /* Espace entre le label et l'input */
-}
-
-
-input[type="text"] {
-    padding: 10px;
-    width: 200px;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid #6E4C2A;
-    border-radius: 4px;
-    color: #333;
-    font-size: 1em;
-}
-
-.btn-start {
-    margin-top: 20px;
-    padding: 12px 20px;
-    font-size: 18px;
-    background-color: #A0522D; /* Couleur marron pour le bouton */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.btn-start:hover {
-    background-color: #8B4513;
-}
+/* --- Styles pour le bouton "Retour au menu" (inchangé) --- */
 .btn-back-to-menu {
-    position: absolute; /* Positionnement absolu pour le placer librement */
-    top: 20px; /* À 20px du bord supérieur */
-    left: 20px; /* À 20px du bord gauche */
-    z-index: 1000; /* S'assure qu'il est au-dessus des autres éléments */
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
 
-    /* Reprise des styles de base du bouton en bois du menu.css */
-    display: flex; /* Utilise flexbox pour centrer le texte si le padding varie */
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 200px; /* Une largeur un peu plus petite car c'est un bouton secondaire */
-    padding: 10px 15px; /* Padding ajusté */
+    width: 200px;
+    padding: 10px 15px;
     text-decoration: none;
     font-family: 'Georgia', serif;
-    font-size: 1.2em; /* Taille de police légèrement plus petite */
+    font-size: 1.2em;
     font-weight: bold;
     text-align: center;
     cursor: pointer;
@@ -148,13 +63,12 @@ input[type="text"] {
     text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
 
     box-shadow:
-        0 6px 0 0 #4A3228, /* Ombre 3D ajustée pour la taille */
+        0 6px 0 0 #4A3228,
         0 12px 20px rgba(0, 0, 0, 0.6);
 
     transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-/* Effet au survol (hover) pour le bouton de retour */
 .btn-back-to-menu:hover {
     background-color: #6A4E3A;
     box-shadow:
@@ -163,8 +77,203 @@ input[type="text"] {
     transform: translateY(3px);
 }
 
-/* Effet quand le bouton est cliqué (active) pour le bouton de retour */
 .btn-back-to-menu:active {
+    background-color: #4A3228;
+    box-shadow:
+        0 1px 0 0 #33241A,
+        0 2px 5px rgba(0, 0, 0, 0.3);
+    transform: translateY(4px);
+}
+/* --- Fin des styles pour le bouton "Retour au menu" --- */
+
+
+/* Conteneur Flexbox pour le sélecteur et les stats - PLUS DE POSITION ABSOLUTE ICI */
+.hero-selection-area {
+    display: flex;
+    justify-content: center; /* Centre l'ensemble (sélecteur + stats) */
+    align-items: center; /* Aligne les deux éléments au centre de leur hauteur */
+    gap: 80px; /* Espace entre le sélecteur et l'encadré des stats */
+    /* Remove any margin-top that might push it down, as it's now handled by main-content-wrapper gap */
+}
+
+
+.selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Conserve relative pour les flèches absolues */
+}
+
+.hero-display {
+    border: 5px solid #8B4513;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+    background-color: rgba(60, 35, 10, 0.85);
+    padding: 10px;
+    text-align: center;
+}
+
+.hero-display img {
+    width: 220px;
+    height: auto;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#prev, #next {
+    padding-left: 10px;
+    background: #4A3228;
+    border: 3px solid #8B4513;
+    border-radius: 5px;
+    font-size: 2em;
+    padding: 5px 15px;
+    cursor: pointer;
+    color: #FFD700;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#prev:hover, #next:hover {
+    background-color: #6A4E3A;
+    transform: translateY(-50%) scale(1.05);
+}
+#prev:active, #next:active {
+    background-color: #33241A;
+    transform: translateY(-50%) scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#prev {
+    left: -60px;
+}
+
+#next {
+    right: -60px;
+}
+
+.hero-name {
+    font-size: 1.8em;
+    color: #FFD700;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    margin: 15px 0 0 0; /* Ajuste la marge */
+}
+
+
+/* Styles de l'encadré des statistiques (inchangés) */
+.stats-box {
+    margin-right: 10px;
+    background-color: rgba(60, 35, 10, 0.85);
+    border: 3px solid #8B4513;
+    border-radius: 10px;
+    padding: 20px 30px;
+    width: 250px;
+    color: #f0e7d8;
+    text-shadow: 1px 1px 2px #000;
+    font-family: 'Georgia', serif;
+    font-size: 1.1em;
+    line-height: 1.6;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.stats-box h3 {
+    color: #FFD700;
+    font-size: 1.5em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.5);
+    padding-bottom: 10px;
+}
+
+.stats-box p {
+    margin-bottom: 8px;
+}
+
+.stats-box span {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+
+/* Styles du formulaire de confirmation - PLUS DE POSITION ABSOLUTE ICI */
+.confirm-form {
+    /* margin-top: 30px; */ /* Géré par le gap du .main-content-wrapper */
+    background: rgba(60, 35, 10, 0.85);
+    border: 3px solid #8B4513;
+    border-radius: 10px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    width: 300px;
+    margin: 0; /* Réinitialise les marges pour Flexbox */
+}
+
+.confirm-form label {
+    font-size: 1.2em;
+    color: #FFD700;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+input[type="text"] {
+    padding: 10px;
+    width: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #8B4513;
+    border-radius: 4px;
+    color: #FFD700;
+    font-size: 1em;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+input[type="text"]::placeholder {
+    color: rgba(255, 215, 0, 0.5);
+}
+
+.btn-start {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 250px;
+    padding: 12px 20px;
+    text-decoration: none;
+    font-family: 'Georgia', serif;
+    font-size: 1.4em;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+
+    background-color: #5C4033;
+    border: 5px solid #8B4513;
+    border-radius: 8px;
+
+    color: #FFD700;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
+
+    box-shadow:
+        0 6px 0 0 #4A3228,
+        0 12px 20px rgba(0, 0, 0, 0.6);
+
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    margin-top: 15px;
+}
+
+.btn-start:hover {
+    background-color: #6A4E3A;
+    box-shadow:
+        0 3px 0 0 #4A3228,
+        0 6px 10px rgba(0, 0, 0, 0.4);
+    transform: translateY(3px);
+}
+
+.btn-start:active {
     background-color: #4A3228;
     box-shadow:
         0 1px 0 0 #33241A,
