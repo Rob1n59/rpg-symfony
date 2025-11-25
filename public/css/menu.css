@@ -2,7 +2,9 @@ body {
     margin: 0;
     padding: 0;
     height: 100vh;
-    background: url("public/images/background.jpg") no-repeat center center/cover;
+    /* Correction du chemin de l'image si elle est dans public/images */
+    /* Assure-toi que ce chemin est correct par rapport à l'emplacement de menu.css */
+    background: url("../images/background.jpg") no-repeat center center/cover; 
     font-family: "Georgia", serif;
 }
 
@@ -13,48 +15,79 @@ body {
     justify-content: center;
     align-items: center;
     text-align: center;
-    backdrop-filter: blur(2px);
+    /* backdrop-filter: blur(2px); */ /* J'ai commenté le blur, l'image ne semble pas en avoir un. Décommenter si tu le souhaites. */
 }
 
 .title {
     font-size: 3.2rem;
     font-weight: bold;
-    color: #f5e6c5;
-    text-shadow: 2px 2px 4px #000;
+    color: #FFD700; /* Texte doré, comme dans l'image */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Ombre plus foncée pour le contraste */
     margin-bottom: 40px;
+    letter-spacing: 2px; /* Espacement pour un look plus "titre" */
 }
 
 .menu-buttons {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 20px; /* Espace entre les boutons */
+    align-items: center; /* Centre les boutons horizontalement */
+    /* margin-top: 50px; */ /* Tu peux ajouter si tu veux plus d'espace au-dessus du premier bouton */
 }
 
+/* --- NOUVEAUX STYLES POUR LES BOUTONS (remplace .btn, .btn:hover, .btn:active) --- */
 .btn {
     display: block;
-    width: 320px;
+    width: 320px; /* Garde ta largeur */
     padding: 15px 25px;
-    background: rgba(60, 35, 10, 0.85);
-    border: 3px solid #3bbdcc;
-    border-radius: 10px;
-    color: #f0e7d8;
     text-decoration: none;
-    font-size: 1.4rem;
+    font-family: 'Georgia', serif; /* Garde ta police */
+    font-size: 1.8em; /* Plus grand comme l'image */
     font-weight: bold;
     text-align: center;
-    text-shadow: 1px 1px 2px #000;
-    transition: 0.25s;
+    cursor: pointer;
+    white-space: nowrap;
+
+    /* --- Styles pour l'effet "bois" --- */
+    background-color: #5C4033; /* Couleur de base marron foncé pour le bois */
+    border: 5px solid #8B4513; /* Bordure marron plus clair pour le cadre (couleur "sienne") */
+    border-radius: 8px; /* Très léger arrondi des coins */
+
+    color: #FFD700; /* Texte doré comme dans l'image */
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7); /* Ombre plus prononcée pour faire ressortir le texte */
+
+    /* Ombre de boîte pour donner de la profondeur et un effet "bouton pressable" */
+    box-shadow:
+        0 8px 0 0 #4A3228, /* Ombre plus foncée vers le bas pour l'effet 3D */
+        0 15px 30px rgba(0, 0, 0, 0.6); /* Ombre plus diffuse pour un effet de flottement */
+
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+/* Effet au survol (hover) */
 .btn:hover {
-    background: rgba(100, 60, 20, 0.9);
-    transform: scale(1.05);
-    box-shadow: 0 0 10px #3bbdcc;
+    background-color: #6A4E3A; /* Légèrement plus clair au survol */
+    box-shadow:
+        0 4px 0 0 #4A3228, /* L'ombre du bas remonte un peu */
+        0 8px 15px rgba(0, 0, 0, 0.4); /* Ombre diffuse moins prononcée */
+    transform: translateY(4px); /* Donne l'impression que le bouton s'enfonce */
 }
+
+/* Effet quand le bouton est cliqué (active) */
+.btn:active {
+    background-color: #4A3228; /* Encore plus foncé */
+    box-shadow:
+        0 2px 0 0 #33241A, /* L'ombre du bas remonte encore */
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(6px); /* S'enfonce davantage */
+}
+/* --- FIN DES NOUVEAUX STYLES POUR LES BOUTONS --- */
+
 
 .footer {
     margin-top: 60px;
-    color: #f2e3c4;
+    color: #FFD700; /* Pied de page doré pour la cohérence */
     font-size: 1rem;
     opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Ombre pour le rendre plus lisible */
 }

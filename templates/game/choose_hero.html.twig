@@ -7,8 +7,11 @@
 </head>
 
 <body>
-
-<h1 class="title">Choisissez votre héros</h1>
+<a href="{{ path('app_menu_principal') }}" class="btn-back-to-menu">
+    Retour au menu
+</a>
+{# CHANGEMENT ICI: La classe "title" devient "main-title" #}
+<h1 class="main-title">Choisissez votre héro</h1>
 
 <div class="selector">
 
@@ -16,7 +19,8 @@
 
     <div class="hero-display">
         <img id="hero-image" src="{{ classes[0].image }}" alt="Héros">
-        <h2 id="hero-name">{{ classes[0].name }}</h2>
+        {# CHANGEMENT ICI: La balise h2 obtient la classe "hero-name" #}
+        <h2 id="hero-name" class="hero-name">{{ classes[0].name }}</h2>
     </div>
 
     <button id="next">⟩</button>
@@ -26,8 +30,9 @@
 <form action="{{ path('choose_hero_confirm') }}" method="POST" class="confirm-form">
     <input type="hidden" name="class_id" id="class-id" value="1">
 
-    <label>Nom du personnage :</label>
-    <input type="text" name="player_name" required>
+    {# CHANGEMENT ICI: Le label est maintenant dans une balise <label> #}
+    <label for="player_name">Nom du personnage :</label>
+    <input type="text" name="player_name" id="player_name" required placeholder="Entrez votre nom"> {# Ajout du placeholder pour l'exemple #}
 
     <button type="submit" class="btn-start">Commencer l'aventure</button>
 </form>
@@ -40,6 +45,16 @@
     const img = document.getElementById("hero-image");
     const name = document.getElementById("hero-name");
     const classIdField = document.getElementById("class-id");
+
+    // Assurez-vous que l'affichage initial correspond à la première classe
+    function updateInitial() {
+        if (classes.length > 0) {
+            img.src = classes[0].image;
+            name.textContent = classes[0].name;
+            classIdField.value = classes[0].id;
+        }
+    }
+    updateInitial(); // Appeler au chargement de la page
 
     document.getElementById("next").onclick = () => {
         index = (index + 1) % classes.length;
