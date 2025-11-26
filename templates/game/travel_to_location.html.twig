@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Voyage vers {{ location.name }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        body {
+            background-color: #2b1d14;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            color: #FFD700;
+            font-family: "Georgia", serif;
+        }
+
+        .travel-message {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .footsteps {
+            display: flex;
+            gap: 20px;
+            animation: travelAnimation 3s linear forwards;
+        }
+
+        .footstep {
+            width: 50px;
+            height: 50px;
+            background-image: url("{{ asset('./images/footstep.png') }}");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        @keyframes travelAnimation {
+            0% { transform: translateX(-50px); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateX(50px); opacity: 0; }
+        }
+
+        .footstep.step-active {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="travel-message">
+        Voyage vers {{ location.name }}...
+    </div>
+
+    <div class="footsteps">
+        <div class="footstep"></div>
+        <div class="footstep"></div>
+        <div class="footstep"></div>
+        <div class="footstep"></div>
+        <div class="footstep"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const footstepElements = document.querySelectorAll('.footstep');
+            const finalUrl = "{{ path('game_location_show', {'id': location.id}) }}";
+            const delayPerStep = 500;
+            const totalAnimationTime = 3000;
+
+            footstepElements.forEach((step, index) => {
+                setTimeout(() => {
+                    step.classList.add('step-active');
+                }, index * delayPerStep);
+            });
+
+            setTimeout(() => {
+                window.location.href = finalUrl;
+            }, totalAnimationTime);
+        });
+    </script>
+{% endblock %}
+
+{% block javascripts %}{% endblock %}

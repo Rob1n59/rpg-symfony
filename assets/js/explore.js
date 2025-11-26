@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
             infoboxName.textContent = marker.dataset.name;
             infoboxDescription.textContent = marker.dataset.description;
             infoboxDanger.textContent = "Danger : " + marker.dataset.danger;
-            exploreLink.href = `/game/location/${marker.dataset.id}`; // URL d'exploration (adapter si besoin)
+            exploreLink.href = `/game/location/${marker.dataset.id}/travel`; // URL d'exploration (adapter si besoin)
 
             // --- NOUVEAU CALCUL DE POSITIONNEMENT ---
             // Le marqueur est positionné en % par rapport à la carte en background.
