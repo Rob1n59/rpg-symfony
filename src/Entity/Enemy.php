@@ -31,6 +31,17 @@ class Enemy
     #[ORM\Column]
     private ?int $xpReward = null;
 
+    // NOUVEAU CHAMP : Pour stocker le chemin d'une image de l'ennemi
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+
+    // NOUVEAU CHAMP : Relation ManyToOne vers l'entité Item pour le loot
+    // Un ennemi peut dropper un type d'objet spécifique (ou aucun si null).
+    #[ORM\ManyToOne(targetEntity: Item::class)]
+    #[ORM\JoinColumn(nullable: true)] // L'ennemi peut ne pas dropper d'objet
+    private ?Item $lootItem = null;
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -104,6 +115,32 @@ class Enemy
     public function setXpReward(int $xpReward): static
     {
         $this->xpReward = $xpReward;
+
+        return $this;
+    }
+
+    // NOUVEAU GETTER/SETTER pour image
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    // NOUVEAU GETTER/SETTER pour lootItem
+    public function getLootItem(): ?Item
+    {
+        return $this->lootItem;
+    }
+
+    public function setLootItem(?Item $lootItem): static
+    {
+        $this->lootItem = $lootItem;
 
         return $this;
     }

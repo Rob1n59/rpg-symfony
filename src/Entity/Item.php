@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ItemRepository;
+use Doctrine\Common\Collections\ArrayCollection; // Pour la relation inverse avec PlayerItem
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ItemRepository::class)]
@@ -19,11 +21,33 @@ class Item
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)] // Rendre nullable si l'objet n'a pas toujours un bonus d'attaque
     private ?int $attackBonus = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)] // Rendre nullable si l'objet n'a pas toujours un bonus de HP
     private ?int $hpBonus = null;
+
+    // NOUVEAU CHAMP : Type de l'objet (ex: 'consumable', 'weapon', 'armor', 'quest')
+    #[ORM\Column(length: 50)]
+    private ?string $type = null;
+
+    // NOUVEAU CHAMP : Quantité de soin pour les objets consommables (ex: potion)
+    #[ORM\Column(nullable: true)] // Peut être null si l'objet n'est pas un consommable de soin
+    private ?int $healingAmount = null;
+
+    // NOUVEAU CHAMP : Pour stocker le chemin de l'icône ou de l'image de l'objet
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
+
+    // Relation inverse OneToMany avec PlayerItem (un Item peut être possédé par plusieurs PlayerItem)
+    #[ORM\OneToMany(targetEntity: PlayerItem::class, mappedBy: 'item', orphanRemoval: true)]
+    private Collection $playerItems;
+
+    public function __construct()
+    {
+        $this->playerItems = new ArrayCollection();
+    }
+
 
     public function getId(): ?int
     {
@@ -59,7 +83,7 @@ class Item
         return $this->attackBonus;
     }
 
-    public function setAttackBonus(int $attackBonus): static
+    public function setAttackBonus(?int $attackBonus): static
     {
         $this->attackBonus = $attackBonus;
 
@@ -71,9 +95,78 @@ class Item
         return $this->hpBonus;
     }
 
-    public function setHpBonus(int $hpBonus): static
+    public function setHpBonus(?int $hpBonus): static
     {
         $this->hpBonus = $hpBonus;
+
+        return $this;
+    }
+
+    // NOUVEAU GETTER/SETTER pour type
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): static
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    // NOUVEAU GETTER/SETTER pour healingAmount
+    public function getHealingAmount(): ?int
+    {
+        return $this->healingAmount;
+    }
+
+    public function setHealingAmount(?int $healingAmount): static
+    {
+        $this->healingAmount = $healingAmount;
+
+        return $this;
+    }
+
+    // NOUVEAU GETTER/SETTER pour image
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlayerItem>
+     */
+    public function getPlayerItems(): Collection
+    {
+        return $this->playerItems;
+    }
+
+    public function addPlayerItem(PlayerItem $playerItem): static
+    {
+        if (!$this->playerItems->contains($playerItem)) {
+            $this->playerItems->add($playerItem);
+            $playerItem->setItem($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlayerItem(PlayerItem $playerItem): static
+    {
+        if ($this->playerItems->removeElement($playerItem)) {
+            // set the owning side to null (unless already changed)
+            if ($playerItem->getItem() === $this) {
+                $playerItem->setItem(null);
+            }
+        }
 
         return $this;
     }
