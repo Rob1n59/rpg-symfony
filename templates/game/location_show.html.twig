@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ location.name }}{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/location_show.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="location-show-container">
+    <div class="location-card">
+        <h1 class="location-title">{{ location.name }}</h1>
+        <p class="location-description">{{ location.description }}</p>
+        <p class="location-danger">Niveau de danger : <span class="danger-level-{{ location.dangerLevel|lower }}">{{ location.dangerLevel }}</span></p>
+
+        <div class="actions-panel">
+            <h2 class="actions-title">Que voulez-vous faire ?</h2>
+            <ul class="action-list">
+                {% for option in sceneOptions %}
+                    <li>
+                        {# Assurez-vous que la route 'game_handle_option' existe et prend 'locationId' et 'optionId' #}
+                        <a href="{{ path('game_handle_option', {'locationId': location.id, 'optionId': option.id}) }}" class="action-button">
+                            {{ option.text }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    {# Le bouton de retour à la carte, légèrement stylisé pour être distinct #}
+    <a href="{{ path('game_explore') }}" class="back-to-map-button">
+        Retour à la carte du monde
+    </a>
+</div>
+{% endblock %}

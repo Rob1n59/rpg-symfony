@@ -1,3 +1,5 @@
+{# templates/game/explore.html.twig #}
+
 {% extends 'base.html.twig' %}
 
 {% block stylesheets %}
@@ -5,58 +7,36 @@
 {% endblock %}
 
 {% block body %}
-<div class="explore-container">
+    {# La carte du monde est en background CSS, le div ne contient plus les marqueurs #}
+    <div class="world-map-background"></div> {# <--- Assurez-vous que ce div est vide ici #}
 
-    <div class="map-container">
-        <img src="{{ asset('images/world_map.png') }}" class="world-map" alt="Carte du monde">
+    {# Les marqueurs sont maintenant directement dans le body (via le block body) #}
+    {# Ils seront positionnés absolument par rapport au body/fenêtre #}
+    {% for loc in locations %}
+        <div
+            class="map-marker"
+            data-id="{{ loc.id }}"
+            data-name="{{ loc.name }}"
+            data-description="{{ loc.description }}"
+            data-danger="{{ loc.dangerLevel }}"
+            style="left: {{ loc.x }}%; top: {{ loc.y }}%;"
+        ></div>
+    {% endfor %}
 
-        {% for loc in locations %}
-            <div
-                class="map-marker"
-                data-name="{{ loc.name }}"
-                data-description="{{ loc.description }}"
-                data-danger="{{ loc.danger }}"
-                style="left: {{ loc.x }}%; top: {{ loc.y }}%;"
-            ></div>
-        {% endfor %}
+    {# L'infobulle #}
+    <div id="location-infobox" class="location-infobox-popup hidden">
+        <h3 id="infobox-name"></h3>
+        <p id="infobox-description"></p>
+        <p id="infobox-danger"></p>
+        <a href="#" id="explore-link" class="button-explore">Explorer ce lieu</a>
+        <button id="infobox-close-button" class="close-button">X</button>
     </div>
+    <a href="{{ path('choose_hero') }}" class="button-return-to-hero">
+        Retour au choix du héros
+    </a>
 
-    <div class="location-panel">
-        <h2 id="loc-name">Sélectionnez un lieu</h2>
-        <p id="loc-description">Cliquez sur un point de la carte pour plus d'informations.</p>
-        <p id="loc-danger"></p>
-        <button id="explore-button" class="hidden">Explorer ce lieu</button>
-    </div>
+{% endblock %}
 
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const markers = document.querySelectorAll(".map-marker");
-
-    const panel = document.querySelector(".location-panel");
-    const locName = document.getElementById("loc-name");
-    const locDescription = document.getElementById("loc-description");
-    const locDanger = document.getElementById("loc-danger");
-    const exploreBtn = document.getElementById("explore-button");
-
-    markers.forEach(marker => {
-        marker.addEventListener("click", () => {
-
-            // Affiche le panneau si caché
-            panel.style.display = "block";
-
-            // Mise à jour du contenu
-            locName.textContent = marker.dataset.name;
-            locDescription.textContent = marker.dataset.description;
-            locDanger.textContent = "Danger : " + marker.dataset.danger;
-
-            // Affiche le bouton
-            exploreBtn.classList.remove("hidden");
-        });
-    });
-});
-</script>
-
-
+{% block javascripts %}
+    {{ encore_entry_script_tags('explore') }}
 {% endblock %}

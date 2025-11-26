@@ -2,11 +2,32 @@
 body {
     margin: 0;
     padding: 0;
-    background: #2b1d14 !important;
+    background-color: #2b1d14; /* Couleur de fond si l'image de la carte ne couvre pas tout */
     font-family: "Georgia", serif;
+    overflow: hidden; /* Empêche les barres de défilement si la carte est plus grande que la fenêtre */
+    height: 100vh; /* Permet au body de prendre toute la hauteur de la fenêtre */
+    width: 100vw; /* Permet au body de prendre toute la largeur de la fenêtre */
+    color: #FFD700;
 }
 
+/* Nouveau conteneur pour la carte en background */
+.world-map-background {
+    position: fixed; /* Fixe la carte en arrière-plan */
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('../images/world_map.png'); /* Chemin vers votre image de carte */
+    background-size: cover; /* Couvre toute la surface sans déformer l'image */
+    background-position: center center; /* Centre l'image */
+    background-repeat: no-repeat; /* Ne répète pas l'image */
+    z-index: -1; /* Place la carte derrière tout le reste */
+}
 
+/* Anciens .explore-container et .map-container deviennent obsolètes avec la carte en fond */
+/* Si vous aviez d'autres éléments dans .explore-container, il faudra les réintégrer ailleurs */
+/* Vous pouvez supprimer ou commenter ces règles si elles ne sont plus utilisées */
+/*
 .explore-container {
     display: flex;
     gap: 20px;
@@ -16,20 +37,22 @@ body {
     color: #FFD700;
     font-family: "Georgia", serif;
 }
-
-/* === MAP === */
 .map-container {
     position: relative;
     width: 70%;
 }
+*/
 
-/* Image de la carte */
+/* Image de la carte (l'élément .world-map img n'est plus utilisé directement, c'est le background-image) */
+/* Supprimez ou commentez si vous utilisez background-image sur .world-map-background */
+/*
 .world-map {
     width: 105%;
     border-radius: 5%;
     border: 5px solid #8B4513;
     box-shadow: 0 10px 25px rgba(0,0,0,0.7);
 }
+*/
 
 /* === MARQUEURS SUR LA CARTE === */
 .map-marker {
@@ -38,13 +61,14 @@ body {
     background-color: #FFD700;
     border-radius: 50%;
     border: 3px solid #5C4033;
-    position: absolute;
+    position: absolute; /* Reste absolu par rapport à .world-map-background */
     transform: translate(-50%, -50%);
     cursor: pointer;
     transition: transform 0.2s ease, background-color 0.2s ease;
     box-shadow:
         0 0 10px rgba(255, 215, 0, 0.8),
         0 0 20px rgba(255, 215, 0, 0.5);
+    z-index: 10; /* Assurez-vous que les marqueurs sont au-dessus de la carte */
 }
 
 .map-marker:hover {
@@ -52,56 +76,115 @@ body {
     background-color: orange;
 }
 
-/* === PANNEAU D’INFO (STYLE BOIS) === */
-.location-panel {
-    width: 30%;
-    padding: 25px;
+/* === INFOBULE (POP-UP) - Utilise vos styles de .location-panel et les adapte === */
+.location-infobox-popup { /* Nouvelle classe pour l'infobulle */
+    position: absolute; /* Positionnement absolu par rapport au body */
+    padding: 15px;
     border-radius: 12px;
-
-    /* Style BOIS comme tes boutons */
-    background-color: #5C4033;
+    background-color: #5C4033; /* Fond bois */
     border: 5px solid #8B4513;
-
-    /* Texte doré comme le menu */
     color: #FFD700;
     text-shadow: 1px 1px 2px black;
-
-    /* Ombres */
     box-shadow:
         0 8px 0 0 #4A3228,
         0 15px 30px rgba(0, 0, 0, 0.6);
-
-    /* Pour cacher au début */
-    display: none;
+    z-index: 100; /* Assure que l'infobulle est au-dessus de tout */
+    width: 250px; /* Largeur fixe pour l'infobulle */
+    max-width: 80%; /* Pour la réactivité */
+    display: none; /* Cachée par défaut, JS la rendra visible */
+    flex-direction: column; /* Pour aligner les éléments de l'infobulle */
+    gap: 10px; /* Espacement entre les éléments */
 }
 
-/* Titres dans le panneau */
-.location-panel h2 {
-    margin-top: 0;
-    font-size: 2rem;
+.location-infobox-popup.active {
+    display: flex; /* Affiche l'infobulle quand la classe 'active' est ajoutée par JS */
+}
+
+.location-infobox-popup h3 { /* Style pour le nom du lieu */
+    margin: 0;
+    font-size: 1.5rem;
     text-align: center;
     color: #FFD700;
     text-shadow: 2px 2px 4px black;
 }
 
-.location-panel p {
-    font-size: 1.2rem;
+.location-infobox-popup p { /* Style pour la description et le danger */
+    margin: 0;
+    font-size: 1rem;
 }
 
-/* === BOUTON D’EXPLORATION — STYLE IDENTIQUE AU MENU === */
-#explore-button {
+.location-infobox-popup .button-explore { /* Le bouton d'exploration dans l'infobulle */
     display: block;
     width: 100%;
-    padding: 15px 25px;
-    margin-top: 20px;
-
+    padding: 10px 15px;
+    margin-top: 10px; /* Moins de marge que le bouton général */
     font-family: 'Georgia', serif;
-    font-size: 1.5em;
+    font-size: 1.2em;
     font-weight: bold;
     text-align: center;
     cursor: pointer;
+    background-color: #5C4033;
+    border: 3px solid #8B4513; /* Bordure un peu plus fine */
+    border-radius: 8px;
+    color: #FFD700;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
+    box-shadow:
+        0 4px 0 0 #4A3228,
+        0 8px 15px rgba(0, 0, 0, 0.4);
+    transition: 0.2s ease;
+    text-decoration: none; /* Supprime le soulignement du lien */
+}
 
-    /* Styles bois */
+.location-infobox-popup .button-explore:hover {
+    background-color: #6A4E3A;
+    transform: translateY(2px); /* Moins de mouvement que le bouton général */
+    box-shadow:
+        0 2px 0 0 #4A3228,
+        0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.location-infobox-popup .button-explore:active {
+    background-color: #4A3228;
+    transform: translateY(3px);
+    box-shadow:
+        0 1px 0 0 #33241A,
+        0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Bouton de fermeture de l'infobulle */
+.close-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: #FFD700;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover {
+    color: white;
+}
+
+.button-return-to-hero {
+    position: fixed; /* Fixe le bouton par rapport à la fenêtre */
+    bottom: 20px; /* 20px du bas */
+    right: 20px; /* 20px de la droite */
+    z-index: 100; /* Assure qu'il est au-dessus de tout */
+
+    padding: 15px 25px; /* Padding similaire à vos autres boutons */
+    
+    font-family: 'Georgia', serif;
+    font-size: 1.2em; /* Taille de police légèrement plus petite que les gros boutons */
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none; /* Supprime le soulignement par défaut des liens */
+
+    /* Styles bois (reprise des styles de #explore-button ou .button-explore) */
     background-color: #5C4033;
     border: 5px solid #8B4513;
     border-radius: 8px;
@@ -116,7 +199,7 @@ body {
     transition: 0.2s ease;
 }
 
-#explore-button:hover {
+.button-return-to-hero:hover {
     background-color: #6A4E3A;
     transform: translateY(4px);
     box-shadow:
@@ -124,10 +207,17 @@ body {
         0 8px 15px rgba(0, 0, 0, 0.4);
 }
 
-#explore-button:active {
+.button-return-to-hero:active {
     background-color: #4A3228;
     transform: translateY(6px);
     box-shadow:
         0 2px 0 0 #33241A,
         0 4px 8px rgba(0, 0, 0, 0.3);
 }
+
+/* Les styles généraux des boutons du panneau ne sont plus nécessaires s'ils sont uniquement dans l'infobulle */
+/*
+#explore-button { ... }
+#explore-button:hover { ... }
+#explore-button:active { ... }
+*/

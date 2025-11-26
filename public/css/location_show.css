@@ -1,0 +1,165 @@
+/* Fichier: public/css/location_show.css */
+
+/* Styles généraux de la page */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Permet le défilement si le contenu dépasse */
+    font-family: "Georgia", serif; /* Reprend la police de ton menu */
+    background-color: #332b21; /* Fond sombre pour correspondre au thème général */
+    color: #f0d8a8; /* Couleur de texte par défaut */
+}
+
+.location-show-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh; /* Prend au moins toute la hauteur de la fenêtre */
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+/* Style de l'encadré principal (location-card) */
+.location-card {
+    background-color: #5C4033; /* Couleur de base marron foncé pour le bois, comme tes boutons */
+    border: 4px solid #8B4513; /* Bordure marron plus clair pour le cadre, comme tes boutons */
+    border-radius: 8px; /* Léger arrondi des coins */
+    box-shadow: 
+        0 8px 0 0 #4A3228, /* Ombre 3D vers le bas */
+        0 15px 30px rgba(0, 0, 0, 0.6); /* Ombre diffuse de flottement */
+    padding: 40px 50px;
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px; /* Espace sous le panneau */
+}
+
+.location-title {
+    font-family: "Georgia", serif; /* Police du menu */
+    color: #FFD700; /* Titre doré */
+    font-size: 2.8em;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-shadow: 
+        -2px -2px 0 #000, 
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 0 10px rgba(0, 0, 0, 0.7); /* Ombre de texte */
+    letter-spacing: 2px;
+}
+
+.location-description {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #f0d8a8; /* Texte clair */
+}
+
+.location-danger {
+    font-size: 1em;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: #d1c4b1; /* Texte légèrement plus clair */
+}
+
+/* Styles pour les niveaux de danger spécifiques (si tu veux des couleurs) */
+.danger-level-faible { color: #8bc34a; /* Vert */ }
+.danger-level-très-faible { color: #cddc39; /* Vert clair */ }
+.danger-level-moyen { color: #ffeb3b; /* Jaune */ }
+.danger-level-élevé { color: #ff9800; /* Orange */ }
+.danger-level-très-élevé { color: #f44336; /* Rouge */ }
+
+
+.actions-panel {
+    margin-top: 40px;
+    border-top: 2px dashed rgba(108, 75, 42, 0.5); /* Ligne de séparation douce */
+    padding-top: 30px;
+}
+
+.actions-title {
+    font-family: "Georgia", serif; /* Police du menu */
+    color: #FFD700; /* Titre doré */
+    font-size: 1.8em;
+    margin-bottom: 25px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.action-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espacement entre les boutons d'action */
+}
+
+/* Styles des boutons d'action (reprend le style .btn de menu.css) */
+.action-button {
+    display: block; /* Prend toute la largeur disponible dans le li */
+    width: 100%; /* Ajuste à la largeur du conteneur */
+    max-width: 300px; /* Limite la largeur pour ne pas être trop étiré */
+    margin: 0 auto; /* Centre les boutons si max-width est appliqué */
+    padding: 12px 20px;
+    text-decoration: none;
+    font-family: 'Georgia', serif;
+    font-size: 1.5em; /* Taille comme tes boutons de menu */
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+
+    /* Styles pour l'effet "bois" - Répétés depuis .btn de menu.css */
+    background-color: #5C4033;
+    border: 4px solid #8B4513;
+    border-radius: 8px;
+
+    color: #FFD700;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.7);
+
+    box-shadow:
+        0 8px 0 0 #4A3228,
+        0 15px 30px rgba(0, 0, 0, 0.6);
+
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.action-button:hover {
+    background-color: #6A4E3A;
+    box-shadow:
+        0 4px 0 0 #4A3228,
+        0 8px 15px rgba(0, 0, 0, 0.4);
+    transform: translateY(4px);
+}
+
+.action-button:active {
+    background-color: #4A3228;
+    box-shadow:
+        0 2px 0 0 #33241A,
+        0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(6px);
+}
+
+
+/* Bouton de retour à la carte, en bas (style moins prononcé) */
+.back-to-map-button {
+    display: inline-block;
+    background-color: #4A3228; /* Marron foncé légèrement différent */
+    color: #f0d8a8;
+    text-decoration: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border: 2px solid #33241A;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    font-family: 'Georgia', serif;
+}
+
+.back-to-map-button:hover {
+    background-color: #5C4033; /* Un peu plus clair au survol */
+    transform: translateY(-2px);
+}
