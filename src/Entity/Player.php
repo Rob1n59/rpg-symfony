@@ -3,9 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\PlayerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\Common\Collections\ArrayCollection;    // AJOUTÉ
-use Doctrine\Common\Collections\Collection;         // AJOUTÉ
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 class Player
@@ -15,11 +15,14 @@ class Player
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 25)]
+    #[ORM\Column(length: 255)]
     private ?string $name = null;
 
     #[ORM\Column]
     private ?int $hp = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $hpMax = null;
 
     #[ORM\Column]
     private ?int $attack = null;
@@ -34,20 +37,24 @@ class Player
     private ?int $experience = null;
 
     #[ORM\Column]
-    private ?int $level = 1;
+    private ?int $level = null; // Vous avez un getter/setter pour level, donc j'ajoute la propriété
 
-    #[ORM\ManyToOne(targetEntity: Location::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\ManyToOne(targetEntity: Location::class)] // Correction : current_location est un ManyToOne vers Location
+    #[ORM\JoinColumn(nullable: true)] // Peut être null si le joueur n'a pas de localisation au début
     private ?Location $currentLocation = null;
 
-    // Cette propriété a été ajoutée. Elle doit être initialisée dans le constructeur.
+    #[ORM\Column(nullable: true)]
+    private ?int $playerClassId = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $playerClassName = null; // Pour afficher "Guerrier", "Mage", "Archer"
+
     #[ORM\OneToMany(targetEntity: PlayerItem::class, mappedBy: 'player', orphanRemoval: true)]
     private Collection $playerItems;
 
-    // NOUVEAU CONSTRUCTEUR AJOUTÉ ICI
     public function __construct()
     {
-        $this->playerItems = new ArrayCollection(); // Initialisation de la collection
+        $this->playerItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -63,7 +70,6 @@ class Player
     public function setName(string $name): static
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -75,7 +81,17 @@ class Player
     public function setHp(int $hp): static
     {
         $this->hp = $hp;
+        return $this;
+    }
 
+    public function getHpMax(): ?int
+    {
+        return $this->hpMax;
+    }
+
+    public function setHpMax(int $hpMax): static
+    {
+        $this->hpMax = $hpMax;
         return $this;
     }
 
@@ -87,7 +103,6 @@ class Player
     public function setAttack(int $attack): static
     {
         $this->attack = $attack;
-
         return $this;
     }
 
@@ -99,7 +114,6 @@ class Player
     public function setDefense(int $defense): static
     {
         $this->defense = $defense;
-
         return $this;
     }
 
@@ -111,7 +125,6 @@ class Player
     public function setGold(int $gold): static
     {
         $this->gold = $gold;
-
         return $this;
     }
 
@@ -123,7 +136,6 @@ class Player
     public function setExperience(int $experience): static
     {
         $this->experience = $experience;
-
         return $this;
     }
 
@@ -135,7 +147,6 @@ class Player
     public function setLevel(int $level): static
     {
         $this->level = $level;
-
         return $this;
     }
 
@@ -147,7 +158,30 @@ class Player
     public function setCurrentLocation(?Location $currentLocation): static
     {
         $this->currentLocation = $currentLocation;
+        return $this;
+    }
 
+    // --- Getters et Setters pour playerClassId ---
+    public function getPlayerClassId(): ?int
+    {
+        return $this->playerClassId;
+    }
+
+    public function setPlayerClassId(int $playerClassId): static
+    {
+        $this->playerClassId = $playerClassId;
+        return $this;
+    }
+
+    // --- Getters et Setters pour playerClassName ---
+    public function getPlayerClassName(): ?string
+    {
+        return $this->playerClassName;
+    }
+
+    public function setPlayerClassName(string $playerClassName): static
+    {
+        $this->playerClassName = $playerClassName;
         return $this;
     }
 
@@ -165,18 +199,17 @@ class Player
             $this->playerItems->add($playerItem);
             $playerItem->setPlayer($this);
         }
-
         return $this;
     }
 
     public function removePlayerItem(PlayerItem $playerItem): static
     {
         if ($this->playerItems->removeElement($playerItem)) {
+            // set the owning side to null (unless already changed)
             if ($playerItem->getPlayer() === $this) {
                 $playerItem->setPlayer(null);
             }
         }
-
         return $this;
     }
 }

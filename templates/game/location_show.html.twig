@@ -1,36 +1,110 @@
+{# templates/game/location_show.html.twig #}
+
 {% extends 'base.html.twig' %}
 
-{% block title %}{{ location.name }}{% endblock %}
+{% block title %}Exploration de {{ location.name }}{% endblock %}
 
 {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('css/location_show.css') }}">
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/game_location_show.css') }}">
 {% endblock %}
 
 {% block body %}
-<div class="location-show-container">
-    <div class="location-card">
-        <h1 class="location-title">{{ location.name }}</h1>
-        <p class="location-description">{{ location.description }}</p>
-        <p class="location-danger">Niveau de danger : <span class="danger-level-{{ location.dangerLevel|lower }}">{{ location.dangerLevel }}</span></p>
-
-        <div class="actions-panel">
-            <h2 class="actions-title">Que voulez-vous faire ?</h2>
-            <ul class="action-list">
-                {% for option in sceneOptions %}
-                    <li>
-                        {# Assurez-vous que la route 'game_handle_option' existe et prend 'locationId' et 'optionId' #}
-                        <a href="{{ path('game_handle_option', {'locationId': location.id, 'optionId': option.id}) }}" class="action-button">
-                            {{ option.text }}
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
+    <div class="game-container">
+        {# Panneau des stats du joueur (gauche) #}
+        <div class="panel player-stats-panel">
+            <h2>Player Stats</h2>
+            {% set classFileName = player.playerClassName|lower %}
+            {% if classFileName == 'guerrier' %}
+                {% set classFileName = 'warrior' %}
+            {% elseif classFileName == 'mage' %}
+                {% set classFileName = 'mage' %}
+            {% elseif classFileName == 'archer' %}
+                {% set classFileName = 'archer' %}
+            {% endif %}
+            <img src="{{ asset('images/classes/' ~ classFileName ~ '.png') }}" alt="Portrait du {{ player.playerClassName }}" class="player-portrait">
+            <div class="player-info">
+                <p><strong>Nom:</strong> {{ player.name }}</p>
+                <p><strong>Classe:</strong> {{ player.playerClassName }}</p>
+                <p><strong>Niveau:</strong> {{ player.level }}</p>
+                <p><strong>HP:</strong> {{ player.hp }} / {{ player.hpMax }}</p>
+                <p><strong>Attaque:</strong> {{ player.attack }}</p>
+                <p><strong>Défense:</strong> {{ player.defense }}</p>
+                <p><strong>Or:</strong> {{ player.gold }}</p>
+                <p><strong>XP:</strong> {{ player.experience }}</p>
+            </div>
         </div>
+
+        {# Zone de jeu principale (image de la scène) #}
+        <div class="main-game-area" style="
+            background-image: url('{{ asset('images/location_scenes/' ~ location.id ~ '.png') }}');
+            ">
+            {# La description du lieu et les boutons ne sont plus ici #}
+        </div>
+
+        {# Panneau d'informations sur le lieu (droite) #}
+        <div class="panel location-info-panel">
+            <h2>Location</h2>
+            <img src="{{ asset('images/location_icons/location_default.png') }}" alt="Icône du lieu" class="location-icon">
+            <p><strong>{{ location.name }}</strong></p>
+            {# NOUVEAU : Description du lieu déplacée ici #}
+            <p class="location-description">{{ location.description }}</p>
+            <p>Danger Level: <span style="color:
+                {% if location.dangerLevel == 'Très faible' %}lightgreen
+                {% elseif location.dangerLevel == 'Faible' %}yellowgreen
+                {% elseif location.dangerLevel == 'Élevé' %}orange
+                {% elseif location.dangerLevel == 'Très Élevé' %}red
+                {% else %}white
+                {% endif %};">
+                {{ location.dangerLevel }}
+            </span></p>
+        </div>
+
+        {# Ancien message-box supprimé (était la description au centre) #}
+        {# <div class="message-box">...</div> #}
+
+        {# NOUVEAU : Boîte de logs et d'actions #}
+       <div class="panel game-logs-panel">
+            <h3>Logs d'activités</h3>
+            <div class="logs-content">
+                <p>Bienvenue dans {{ location.name }} !</p>
+                {# Votre bloc last_action_message, si vous le gardez #}
+                {% if app.session.get('last_action_message') %}
+                    <p class="log-entry alert-info">{{ app.session.get('last_action_message')|raw }}</p> {# AJOUTER |raw ICI AUSSI SI last_action_message PEUT CONTENIR DU HTML #}
+                    {% do app.session.remove('last_action_message') %}
+                {% endif %}
+
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="log-entry alert-{{ label }}">
+                            {{ message|raw }} {# <-- TRÈS IMPORTANT : AJOUTEZ LE FILTRE |raw ICI #}
+                        </p>
+                    {% endfor %}
+                {% endfor %}
+
+            </div>
+
+            {# Boutons d'action déplacés ici #}
+            <div class="action-buttons">
+                <ul>
+                    {# Les options doivent venir de sceneOptions comme avant, mais affichées ici #}
+                    {% for option in sceneOptions %}
+                        <li>
+                            <a href="{{ path('game_handle_option', {'locationId': location.id, 'optionId': option.id}) }}">
+                                {{ option.text }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
     </div>
+
+    {# Flash messages, gardez l'option B si vous les voulez toujours pour les erreurs #}
     
-    {# Le bouton de retour à la carte, légèrement stylisé pour être distinct #}
-    <a href="{{ path('game_explore') }}" class="back-to-map-button">
-        Retour à la carte du monde
-    </a>
-</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
 {% endblock %}

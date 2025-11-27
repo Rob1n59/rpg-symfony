@@ -1,0 +1,79 @@
+/* public/css/loading_combat.css */
+
+/* Le body global est déjà stylisé par base.html.twig ou app.css */
+/* Mais nous pouvons le surcharger pour cette page si besoin */
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    overflow: hidden; /* Cache les barres de défilement */
+    background-color: #1a1008; /* Fond légèrement plus sombre pour le chargement */
+    color: #FFD700;
+}
+
+.global-background-wrapper { /* S'assurer que le fond flou ne s'affiche pas derrière cette page */
+    display: none;
+}
+
+body::before { /* S'assurer que l'overlay ne s'affiche pas derrière cette page */
+    display: none;
+}
+
+
+.loading-screen {
+    text-align: center;
+    background-color: rgba(30, 20, 10, 0.9);
+    border: 1px solid #6b4e2a;
+    border-radius: 10px;
+    padding: 40px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+    max-width: 600px;
+    width: 90%;
+}
+
+.loading-title {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    color: #FFD700;
+}
+
+.loading-message {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    color: #e0c8a8;
+}
+
+/* Style pour l'icône de chargement (spinner) */
+.spinner {
+    border: 8px solid rgba(255, 255, 255, 0.1);
+    border-top: 8px solid #FFD700;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1.5s linear infinite;
+    margin: 30px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Styles pour les flash messages spécifiques à cette page de chargement */
+.flash-messages-loading p {
+    padding: 10px 15px;
+    margin-top: 15px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.flash-messages-loading .alert-info {
+    background-color: rgba(23, 162, 184, 0.8);
+    color: #fff;
+}
+.flash-messages-loading .alert-success { background-color: rgba(40, 167, 69, 0.8); color: #fff; }
+.flash-messages-loading .alert-warning { background-color: rgba(255, 193, 7, 0.8); color: #212529; }
+.flash-messages-loading .alert-danger  { background-color: rgba(220, 53, 69, 0.8); color: #fff; }

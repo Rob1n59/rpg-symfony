@@ -69,9 +69,10 @@ class GameController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         SessionInterface $session,
-        // LocationRepository $locationRepository // Gardez-le si utilisé pour Player->setCurrentLocation
+        // Si vous utilisez de vraies entités Location, vous injecteriez LocationRepository ici
+        // LocationRepository $locationRepository
     ): Response {
-        $classId = $request->request->get('class_id');
+        $classId = (int)$request->request->get('class_id'); // Castez en int pour plus de sécurité
         $playerName = $request->request->get('player_name');
 
         if (!$classId || !$playerName) {
@@ -79,10 +80,11 @@ class GameController extends AbstractController
             return $this->redirectToRoute('choose_hero');
         }
 
+        // Ajout des noms de classes dans le tableau pour pouvoir les stocker
         $classes = [
-            1 => ['hp' => 120, 'attack' => 8,  'defense' => 12],
-            2 => ['hp' => 80,  'attack' => 15, 'defense' => 5],
-            3 => ['hp' => 100, 'attack' => 10, 'defense' => 8]
+            1 => ['name' => 'Guerrier', 'hp' => 120, 'attack' => 8,  'defense' => 12],
+            2 => ['name' => 'Mage',    'hp' => 80,  'attack' => 15, 'defense' => 5],
+            3 => ['name' => 'Archer',  'hp' => 100, 'attack' => 10, 'defense' => 8]
         ];
 
         if (!isset($classes[$classId])) {
@@ -95,14 +97,18 @@ class GameController extends AbstractController
         $player = new Player();
         $player->setName($playerName);
         $player->setHp($stats['hp']);
+        $player->setHpMax($stats['hp']);       // <-- NOUVEAU : Définir hpMax
         $player->setAttack($stats['attack']);
         $player->setDefense($stats['defense']);
         $player->setGold(0);
         $player->setExperience(0);
+        $player->setLevel(1);                  // <-- NOUVEAU : Définir un niveau initial
+        $player->setPlayerClassId($classId);   // <-- NOUVEAU : Définir l'ID de la classe
+        $player->setPlayerClassName($stats['name']); // <-- NOUVEAU : Définir le nom de la classe
 
-        // Si vous utilisiez $locationRepository pour définir la localisation du joueur
+        // Si vous avez une vraie entité Location que le joueur doit rejoindre au départ :
         /*
-        $initialLocation = $locationRepository->find(1);
+        $initialLocation = $em->getRepository(Location::class)->find(1); // Cherche la location avec l'ID 1
         if ($initialLocation) {
             $player->setCurrentLocation($initialLocation);
         }
@@ -218,14 +224,26 @@ class GameController extends AbstractController
     // Votre méthode showLocation existante (avec la liste de lieux en dur)
     // Pas de modification ici, car votre code est déjà adapté à un ID et à la recherche dans le tableau
     #[Route('/game/location/{id}', name: 'game_location_show')]
+    #[Route('/game/location/{id}', name: 'game_location_show')]
     public function showLocation(
         int $id,
-        SessionInterface $session
-        // LocationRepository $locationRepository, // Décommenter si tu passes aux entités BDD
+        SessionInterface $session,
+        EntityManagerInterface $em // Injectez l'EntityManager
+        // LocationRepository $locationRepository, // Plus nécessaire ici, on utilise le tableau en dur pour les lieux
     ): Response {
         if (!$session->has('player_id')) {
             return $this->redirectToRoute('choose_hero');
         }
+
+        // --- NOUVEAU : Récupération de l'objet Player ---
+        $playerId = $session->get('player_id');
+        $player = $em->getRepository(Player::class)->find($playerId);
+
+        if (!$player) {
+            $this->addFlash('error', 'Joueur non trouvé.');
+            return $this->redirectToRoute('choose_hero');
+        }
+        // --- FIN NOUVEAU ---
 
         // Récupère la liste des lieux (celle que tu as définie manuellement)
         $allLocations = [
@@ -264,6 +282,7 @@ class GameController extends AbstractController
         return $this->render('game/location_show.html.twig', [
             'location' => $location,
             'sceneOptions' => $sceneOptions,
+            'player' => $player, // --- NOUVEAU : Passe l'objet Player au template ---
         ]);
     }
 
@@ -275,7 +294,6 @@ class GameController extends AbstractController
         int $optionId,
         SessionInterface $session,
         EntityManagerInterface $em
-        // LocationRepository $locationRepository
     ): Response {
         if (!$session->has('player_id')) {
             return $this->redirectToRoute('choose_hero');
@@ -287,23 +305,69 @@ class GameController extends AbstractController
             return $this->redirectToRoute('choose_hero');
         }
 
-        switch ($optionId) {
-            case 101:
-                $this->addFlash('info', 'Vous continuez votre chemin...');
-                return $this->redirectToRoute('game_encounter');
-            case 102:
-                $this->addFlash('info', 'Vous cherchez des ressources et trouvez 5 pièces d\'or !');
-                $player->setGold($player->getGold() + 5);
-                $em->flush();
+        // Récupérer le lieu actuel pour pouvoir y retourner ou afficher des infos spécifiques
+        // Ceci est important car vos options renvoient toujours à la location_show
+        $allLocations = [
+            [
+                'id' => 1, 'name' => 'Forêt d’Alden', 'description' => 'Une forêt dense où rôdent des créatures sauvages.', 'dangerLevel' => 'Faible', 'x' => 22, 'y' => 34
+            ],
+            [
+                'id' => 2, 'name' => 'Ruines d’Eldamar', 'description' => 'Ancienne cité magique, hantée par des esprits.', 'dangerLevel' => 'Élevé', 'x' => 55, 'y' => 48
+            ],
+            [
+            'id' => 3, 'name' => 'Montagnes du Nord', 'description' => 'Région glacée abritant des monstres puissants.', 'dangerLevel' => 'Très Élevé', 'x' => 75, 'y' => 18
+            ],
+            [
+                'id' => 4, 'name' => 'Plaine Verdoyante', 'description' => 'Zone paisible, idéale pour commencer une aventure.', 'dangerLevel' => 'Très faible', 'x' => 40, 'y' => 70
+            ]
+        ];
+
+        $currentLocation = null;
+        foreach ($allLocations as $loc) {
+            if ($loc['id'] === $locationId) {
+                $currentLocation = $loc;
+                break;
+            }
+        }
+
+        if (!$currentLocation) {
+            $this->addFlash('error', 'Lieu introuvable.');
+            return $this->redirectToRoute('game_explore'); // Redirection de secours
+        }
+
+
+      switch ($optionId) {
+            case 101: // Continuer le chemin
+                $this->addFlash('info', 'Vous continuez votre chemin et cherchez des adversaires...');
+                return $this->redirectToRoute('game_loading_combat', ['locationId' => $locationId]);
+
+            case 102: // Chercher des ressources
+                $chanceToFind = rand(1, 100);
+
+                if ($chanceToFind <= 70) { // 70% de chance de trouver quelque chose
+                    $goldFound = rand(5, 15);
+                    $player->setGold($player->getGold() + $goldFound);
+                    $em->flush();
+                    
+                    // NOUVEAU: Insérer une balise <span> pour la surbrillance
+                    $message = sprintf('Vous avez cherché des ressources et trouvé <span class="highlight-item">%d pièces d\'or</span> ! Votre total est maintenant de %d.', $goldFound, $player->getGold());
+                    $this->addFlash('success', $message);
+                } else { // 30% de chance de ne rien trouver
+                    $this->addFlash('warning', 'Vous avez cherché des ressources, mais n\'avez rien trouvé cette fois-ci.');
+                }
+                
                 return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
-            case 103:
+
+            case 103: // Retour à la carte
                 $this->addFlash('info', 'Vous êtes de retour sur la carte.');
                 return $this->redirectToRoute('game_explore');
+
             default:
                 $this->addFlash('error', 'Option invalide.');
                 return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
         }
     }
+
 
     #[Route('/explore/encounter', name: 'game_encounter')]
     public function encounter(
