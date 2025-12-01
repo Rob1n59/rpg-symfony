@@ -1,120 +1,257 @@
 // assets/js/explore.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    // const mapContainer = document.querySelector(".map-container"); // Cette ligne n'est plus nécessaire car map-container a été supprimé
+    
+    // =========================================================================
+    // SECTION 1: LOGIQUE DE LA CARTE (explore.html.twig)
+    // S'exécute si les marqueurs et l'infobulle de la carte sont trouvés.
+    // =========================================================================
+    
     const markers = document.querySelectorAll(".map-marker");
     const infobox = document.getElementById("location-infobox");
-    const infoboxName = document.getElementById("infobox-name");
-    const infoboxDescription = document.getElementById("infobox-description");
-    const infoboxDanger = document.getElementById("infobox-danger");
-    const exploreLink = document.getElementById("explore-link");
-    const closeButton = document.getElementById("infobox-close-button"); // Récupère le nouveau bouton de fermeture
+    
+    if (markers.length > 0 && infobox) {
+        
+        const infoboxName = document.getElementById("infobox-name");
+        const infoboxDescription = document.getElementById("infobox-description");
+        const infoboxDanger = document.getElementById("infobox-danger");
+        const exploreLink = document.getElementById("explore-link");
+        const closeButton = document.getElementById("infobox-close-button");
+        
+        let activeMarker = null;
 
-    let activeMarker = null; // Pour garder une trace du marqueur actuellement sélectionné
+        markers.forEach(marker => {
+            marker.addEventListener("click", (event) => {
+                event.stopPropagation();
 
-    markers.forEach(marker => {
-        marker.addEventListener("click", (event) => {
-            console.log("Marqueur cliqué !", marker.dataset.name);
-            event.stopPropagation(); // Empêche le clic de se propager au document
+                // Gestion de l'affichage/masquage
+                if (activeMarker && activeMarker !== marker) {
+                    infobox.classList.remove("active");
+                }
+                if (activeMarker === marker && infobox.classList.contains("active")) {
+                    infobox.classList.remove("active");
+                    activeMarker = null;
+                    return;
+                }
 
-            // Si un marqueur est déjà actif et que ce n'est pas le marqueur cliqué, cache l'ancien
-            if (activeMarker && activeMarker !== marker) {
-                infobox.classList.remove("active"); // Utilise 'active' pour afficher/cacher
-            }
+                activeMarker = marker;
 
-            // Si le même marqueur est cliqué, bascule la visibilité
-            if (activeMarker === marker && infobox.classList.contains("active")) {
+                // Mise à jour du contenu
+                infoboxName.textContent = marker.dataset.name;
+                infoboxDescription.textContent = marker.dataset.description;
+                infoboxDanger.textContent = "Danger : " + marker.dataset.danger;
+                infoboxDanger.style.color = (marker.dataset.danger.includes("Très Élevé") || marker.dataset.danger.includes("Élevé")) ? 'red' : 'lightgreen';
+                exploreLink.href = `/game/location/${marker.dataset.id}/travel`;
+
+                // --- CALCUL DE POSITIONNEMENT ---
+                const markerRect = marker.getBoundingClientRect();
+                const margin = 10;
+                
+                // Mettre l'infobox active et cachée pour obtenir ses dimensions avant de la positionner
+                infobox.style.visibility = 'hidden';
+                infobox.classList.add("active");
+                
+                let desiredLeft = markerRect.left + markerRect.width / 2 + margin;
+                let desiredTop = markerRect.top + markerRect.height / 2 - infobox.offsetHeight / 2;
+
+                // Vérifications de débordement (droite, gauche, haut, bas)
+                if (desiredLeft + infobox.offsetWidth > window.innerWidth - margin) {
+                    desiredLeft = markerRect.left - infobox.offsetWidth - margin;
+                    if (desiredLeft < margin) {
+                        desiredLeft = margin;
+                    }
+                } else if (desiredLeft < margin) {
+                    desiredLeft = margin;
+                }
+                if (desiredTop < margin) {
+                    desiredTop = margin;
+                }
+                if (desiredTop + infobox.offsetHeight > window.innerHeight - margin) {
+                    desiredTop = window.innerHeight - infobox.offsetHeight - margin;
+                }
+
+                infobox.style.left = `${desiredLeft}px`;
+                infobox.style.top = `${desiredTop}px`;
+                infobox.style.visibility = 'visible';
+                // --- FIN CALCUL ---
+            });
+        });
+
+        // Fermeture si clic en dehors
+        document.addEventListener("click", (event) => {
+            if (!infobox.contains(event.target) && !event.target.classList.contains("map-marker")) {
                 infobox.classList.remove("active");
                 activeMarker = null;
-                return;
             }
-
-            activeMarker = marker;
-
-            // Met à jour le contenu de l'infobulle
-            infoboxName.textContent = marker.dataset.name;
-            infoboxDescription.textContent = marker.dataset.description;
-            infoboxDanger.textContent = "Danger : " + marker.dataset.danger;
-            exploreLink.href = `/game/location/${marker.dataset.id}/travel`; // URL d'exploration (adapter si besoin)
-
-            // --- NOUVEAU CALCUL DE POSITIONNEMENT ---
-            // Le marqueur est positionné en % par rapport à la carte en background.
-            // On a besoin de sa position réelle en pixels sur l'écran pour positionner l'infobulle.
-            const markerRect = marker.getBoundingClientRect(); // Position du marqueur par rapport à la fenêtre
-            
-            // On veut positionner l'infobulle à côté du marqueur.
-            // Par exemple, 20px à droite du centre du marqueur.
-            let infoboxLeft = markerRect.left + markerRect.width / 2 + 20;
-            let infoboxTop = markerRect.top + markerRect.height / 2 - infobox.offsetHeight / 2;
-
-            // Simple ajustement pour que l'infobulle ne sorte pas de l'écran (bords droit/bas)
-            // if (infoboxLeft + infobox.offsetWidth > window.innerWidth) {
-            //     infoboxLeft = markerRect.left - infobox.offsetWidth - 20; // À gauche du marqueur
-            // }
-            // if (infoboxTop + infobox.offsetHeight > window.innerHeight) {
-            //     infoboxTop = window.innerHeight - infobox.offsetHeight - 10;
-            // }
-            // if (infoboxTop < 0) {
-            //     infoboxTop = 10;
-            // }
-
-            // Un peu plus robuste :
-            // Garder une marge de 10px autour de l'écran
-            const margin = 10;
-
-            // Positionnement initial (par exemple, à droite du marqueur)
-            let desiredLeft = markerRect.left + markerRect.width / 2 + margin;
-            let desiredTop = markerRect.top + markerRect.height / 2 - infobox.offsetHeight / 2;
-
-            // Vérifier le débordement à droite
-            if (desiredLeft + infobox.offsetWidth > window.innerWidth - margin) {
-                // Si déborde à droite, essayer de la mettre à gauche du marqueur
-                desiredLeft = markerRect.left - infobox.offsetWidth - margin;
-                // Si ça déborde encore à gauche (infobox trop grande ou marqueur trop à gauche)
-                if (desiredLeft < margin) {
-                    desiredLeft = margin; // Le coller au bord gauche
-                }
-            } else if (desiredLeft < margin) { // Si l'infobox est déjà trop à gauche
-                 desiredLeft = margin;
-            }
-
-            // Vérifier le débordement en haut
-            if (desiredTop < margin) {
-                desiredTop = margin;
-            }
-            // Vérifier le débordement en bas
-            if (desiredTop + infobox.offsetHeight > window.innerHeight - margin) {
-                desiredTop = window.innerHeight - infobox.offsetHeight - margin;
-            }
-
-            infobox.style.left = `${desiredLeft}px`;
-            infobox.style.top = `${desiredTop}px`;
-            // --- FIN NOUVEAU CALCUL ---
-            
-            infobox.classList.add("active"); // Utilise la classe 'active' pour afficher l'infobulle
         });
-    });
 
-    // Cache l'infobulle si l'on clique n'importe où ailleurs sur la page
-    document.addEventListener("click", (event) => {
-        // Si le clic n'est pas sur l'infobulle ET n'est pas sur un marqueur
-        if (!infobox.contains(event.target) && !event.target.classList.contains("map-marker")) {
-            infobox.classList.remove("active");
-            activeMarker = null;
+        // Gestion du clic sur le bouton de fermeture
+        if (closeButton) {
+            closeButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                infobox.classList.remove("active");
+                activeMarker = null;
+            });
         }
-    });
-
-    // Gestion du clic sur le nouveau bouton de fermeture
-    if (closeButton) { // Vérifie si le bouton existe
-        closeButton.addEventListener("click", (event) => {
-            event.stopPropagation(); // Empêche le clic de se propager et de rouvrir l'infobulle immédiatement
-            infobox.classList.remove("active");
-            activeMarker = null;
+        
+        // Empêche la propagation des clics à l'intérieur de l'infobulle
+        infobox.addEventListener("click", (event) => {
+            event.stopPropagation();
         });
     }
-    
-    // Empêche la propagation des clics à l'intérieur de l'infobulle pour ne pas la fermer involontairement
-    infobox.addEventListener("click", (event) => {
-        event.stopPropagation();
+
+    // =========================================================================
+    // SECTION 2: LOGIQUE DE LA SCÈNE (location_show.html.twig)
+    // Utilise la délégation d'événements pour une meilleure fiabilité après rechargement.
+    // =========================================================================
+
+    const sceneGameContainer = document.querySelector('.game-container');
+    const actionButtonsContainer = document.querySelector('.js-action-list');
+
+    if (sceneGameContainer && actionButtonsContainer) {
+        
+        // Sélecteurs d'éléments de la scène
+        const mainGameArea = document.querySelector('.main-game-area');
+        const gamePageBackground = document.querySelector('.game-page-background');
+        const logsContent = document.querySelector('.game-logs-panel .logs-content');
+        const lootChestOption = document.querySelector('.js-loot-chest-option');
+        const goBackOption = document.querySelector('.js-go-back-option');
+        
+        // Récupérer l'ID du lieu à partir du data-attribut du conteneur (solution fiable)
+        const locationId = parseInt(sceneGameContainer.dataset.locationId);
+
+        if (isNaN(locationId)) {
+            console.error("ERREUR CRITIQUE: Location ID n'a pas pu être récupéré de .game-container.");
+            return; 
+        }
+
+        // --- Fonctions utilitaires de la scène ---
+
+        function updateSceneImages(mainImageUrl, blurredBgImageUrl) {
+            mainGameArea.style.backgroundImage = `url('${mainImageUrl}')`;
+            gamePageBackground.style.setProperty('--blurred-bg-image', `url('${blurredBgImageUrl}')`);
+        }
+
+        function updateLootChestButtonVisibility(show) {
+            if (lootChestOption) {
+                lootChestOption.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function updateGoBackButtonVisibility(show) {
+            if (goBackOption) {
+                goBackOption.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function handleAjaxOption(url) {
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => { 
+                        throw new Error(errorData.message || response.statusText); 
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    updateSceneImages(data.mainImageUrl, data.blurredBgImageUrl);
+                    updateLootChestButtonVisibility(data.showLootChestOption);
+                    updateGoBackButtonVisibility(data.canGoBack);
+                } else {
+                    if (logsContent) {
+                        logsContent.innerHTML += `<p class="log-entry alert-danger">Erreur: ${data.message}</p>`;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur Fetch:', error);
+                if (logsContent) {
+                    logsContent.innerHTML += `<p class="log-entry alert-danger">Erreur réseau ou du serveur: ${error.message}</p>`;
+                }
+            });
+        }
+        function handleStatsOption(url, optionId) {
+    fetch(url, {
+        method: 'GET', // Le contrôleur PHP handleOption est appelé ici
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        // ... (gestion de la redirection vers le combat si nécessaire)
+        if (!response.ok) {
+            if (response.status === 302 || response.redirected) {
+                 window.location.href = response.url; // Suit la redirection (pour le combat ou autre)
+                 return;
+            }
+            return response.json().then(errorData => { throw new Error(errorData.message || response.statusText); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'update') {
+            // 1. Mettre à jour les stats du joueur dans la barre latérale
+            document.querySelector('[data-stat-name="gold"]').innerHTML = `<strong>Or:</strong> ${data.playerStats.gold}`;
+            
+            // 2. Ajouter le message au log
+            if (logsContent) {
+                logsContent.innerHTML += `<p class="log-entry alert-${data.flashType}">${data.message}</p>`;
+                logsContent.scrollTop = logsContent.scrollHeight; // Scroll vers le bas
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erreur Fetch Stats:', error);
+        if (logsContent) {
+            logsContent.innerHTML += `<p class="log-entry alert-danger">Erreur: ${error.message}</p>`;
+        }
     });
+}
+        
+        // --- DÉLÉGATION D'ÉVÉNEMENTS : Gère les clics AJAX et non-AJAX ---
+       // assets/js/explore.js - Remplacer le gestionnaire d'événements existant
+
+// --- DÉLÉGATION D'ÉVÉNEMENTS : Gère les clics AJAX et non-AJAX ---
+actionButtonsContainer.addEventListener('click', function(event) {
+    const target = event.target.closest('a'); 
+    
+    // Vérifier si nous avons cliqué sur un lien d'action valide
+    if (target && target.dataset.optionId) {
+        event.preventDefault(); // On intercepte TOUS les clics valides ici
+        
+        const optionId = parseInt(target.dataset.optionId);
+        let url = target.href; // L'URL de base est toujours nécessaire
+
+        // 1. Logique AJAX pour le changement de scène (101, 105)
+        if (optionId === 101 || optionId === 105) {
+            
+            // Construction de l'URL pour les routes AJAX spécifiques (POST)
+            if (optionId === 101) { // Continuer le chemin
+                url = `/game/next_scene_variant/${locationId}`;
+            } else if (optionId === 105) { // Revenir en arrière
+                url = `/game/previous_scene_variant/${locationId}`;
+            }
+
+            handleAjaxOption(url); // Gère le changement d'image et la visibilité des boutons
+            return;
+        }
+
+        // 2. Logique AJAX pour la mise à jour des stats (102)
+        else if (optionId === 102) {
+            // L'URL est déjà target.href, nous passons à la fonction qui gère les stats.
+            handleStatsOption(url, optionId);
+            return;
+        }
+
+        // 3. Logique non-AJAX (103, 104) et actions non gérées par AJAX
+        // Pour ces options, nous laissons le navigateur suivre le lien par défaut.
+        // Puisque nous avons fait event.preventDefault() au début, nous le refaisons ici :
+        window.location.href = url;
+    }
+});
+    }
+
 });
