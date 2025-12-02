@@ -1,0 +1,53 @@
+{# templates/game/inventory_modal.html.twig ou inventory_content.html.twig #}
+{# Le code rendu par l'action showInventory #}
+
+<div class="inventory-window">
+    <h3>Inventaire de {{ player.name }}</h3>
+    
+    <div class="inventory-grid">
+        {% for playerItem in inventory %}
+            {% set item = playerItem.item %}
+            
+            {# Slot d'objet réel #}
+            <div class="inventory-slot js-item-slot" 
+                 data-id="{{ playerItem.id }}"
+                 data-name="{{ item.name }}"
+                 data-desc="{{ item.description }}"
+                 data-atk="{{ item.attackBonus|default(0) }}"
+                 data-def="{{ item.defenseBonus|default(0) }}"
+                 data-equipped="{{ playerItem.isIsEquipped ? 'true' : 'false' }}"
+                 data-item-type="{{ item.weaponType }}"
+            >
+                {% if item.image %}
+                    {# L'image est chargée depuis le chemin basé sur item.image (ex: 'axe.png') #}
+                    <img src="{{ asset('images/items/' ~ item.image) }}" alt="{{ item.name }}" class="item-icon">
+                {% endif %}
+                
+                {% if playerItem.quantity > 1 %}
+                    <span class="quantity-tag">{{ playerItem.quantity }}</span>
+                {% endif %}
+                
+                {% if playerItem.isIsEquipped %}
+                    <span class="equipped-tag">ÉQUIPÉ</span>
+                {% endif %}
+            </div>
+        {% else %}
+           
+        {% endfor %}
+        
+        {# Remplir les slots vides pour le style #}
+        {% set slotsToFill = 15 - inventory|length %}
+        {% if slotsToFill > 0 %}
+            {% for i in 1..slotsToFill %}
+                <div class="inventory-slot empty-slot"></div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <button id="close-inventory-button" class="action-button">Fermer</button>
+</div>
+
+{# 
+    IMPORTANT: Le Tooltip (Infobulle) doit être sur la page principale (location_show.html.twig),
+    mais pour le débogage, assurez-vous qu'il est bien là, mais masqué par défaut.
+#}

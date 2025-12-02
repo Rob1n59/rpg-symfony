@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Repository\PlayerItemRepository;
+use App\Entity\PlayerItem;
+use App\Repository\ItemRepository;
 
 class GameController extends AbstractController
 {
@@ -19,18 +22,10 @@ class GameController extends AbstractController
     private function getAllDefinedLocations(): array
     {
         return [
-            [
-                'id' => 1, 'name' => 'Forêt d’Alden', 'description' => 'Une forêt dense où rôdent des créatures sauvages.', 'dangerLevel' => 'Faible', 'x' => 22, 'y' => 34
-            ],
-            [
-                'id' => 2, 'name' => 'Ruines d’Eldamar', 'description' => 'Ancienne cité magique, hantée par des esprits.', 'dangerLevel' => 'Élevé', 'x' => 55, 'y' => 48
-            ],
-            [
-                'id' => 3, 'name' => 'Montagnes du Nord', 'description' => 'Région glacée abritant des monstres puissants.', 'dangerLevel' => 'Très Élevé', 'x' => 75, 'y' => 18
-            ],
-            [
-                'id' => 4, 'name' => 'Plaine Verdoyante', 'description' => 'Zone paisible, idéale pour commencer une aventure.', 'dangerLevel' => 'Très faible', 'x' => 40, 'y' => 70
-            ]
+            ['id' => 1, 'name' => 'Forêt d’Alden', 'description' => 'Une forêt dense où rôdent des créatures sauvages.', 'dangerLevel' => 'Faible', 'x' => 22, 'y' => 34],
+            ['id' => 2, 'name' => 'Ruines d’Eldamar', 'description' => 'Ancienne cité magique, hantée par des esprits.', 'dangerLevel' => 'Élevé', 'x' => 55, 'y' => 48],
+            ['id' => 3, 'name' => 'Montagnes du Nord', 'description' => 'Région glacée abritant des monstres puissants.', 'dangerLevel' => 'Très Élevé', 'x' => 75, 'y' => 18],
+            ['id' => 4, 'name' => 'Plaine Verdoyante', 'description' => 'Zone paisible, idéale pour commencer une aventure.', 'dangerLevel' => 'Très faible', 'x' => 40, 'y' => 70]
         ];
     }
 
@@ -226,15 +221,110 @@ class GameController extends AbstractController
             'canGoBack' => $canGoBack,
         ]);
     }
+    #[Route('/game/inventory', name: 'game_inventory', methods: ['GET'])]
+    public function showInventory(
+        SessionInterface $session, 
+        EntityManagerInterface $em,
+        PlayerItemRepository $playerItemRepository // Injecte le repository pour l'inventaire
+    ): Response {
+        $playerId = $session->get('player_id');
+        $player = $em->getRepository(Player::class)->find($playerId);
+
+        if (!$player) {
+            return $this->redirectToRoute('choose_hero');
+        }
+
+        // Récupérer l'inventaire réel du joueur (tous les PlayerItem liés à ce joueur)
+        $inventory = $playerItemRepository->findBy(['player' => $player]);
+
+        // Optionnel : Vous pouvez définir une URL de retour pour la fermeture de la modale
+        // $currentLocationId = $player->getCurrentLocation() ? $player->getCurrentLocation()->getId() : null;
+
+       return $this->render('game/inventory_modal.html.twig', [
+        'player' => $player,
+        'inventory' => $inventory,
+    ]);
+}
+    // src/Controller/GameController.php (Méthode à ajouter)
+
+#[Route('/game/equip_item/{playerItemId}/{action}', name: 'game_equip_item', methods: ['POST'])]
+public function equipItem(
+    int $playerItemId,
+    string $action,
+    SessionInterface $session,
+    EntityManagerInterface $em,
+    // PlayerRepository $playerRepository (si besoin)
+): JsonResponse {
+    $playerId = $session->get('player_id');
+    $player = $em->getRepository(Player::class)->find($playerId);
+    $playerItem = $em->getRepository(PlayerItem::class)->find($playerItemId);
+
+    if (!$player || !$playerItem || $playerItem->getPlayer()->getId() !== $playerId) {
+        return new JsonResponse(['status' => 'error', 'message' => 'Objet ou joueur invalide.'], 400);
+    }
+
+    $item = $playerItem->getItem();
+    $isEquipping = $action === 'equip';
+
+    // 1. Déséquiper tout autre objet du même type (Par exemple, un seul 'weapon' équipé à la fois)
+    if ($isEquipping && $item->getType() === 'weapon') {
+        // Logique pour déséquiper l'ancienne arme et mettre à jour le bonus total
+        // (Ceci serait une requête Doctrine personnalisée pour trouver l'arme équipée)
+        // Pour l'instant, nous simplifions en mettant à jour le playerItem cliqué.
+        
+        // Supposons que vous avez un service pour gérer les bonus. Pour l'instant, calculons directement:
+        $currentAttackBonus = $player->getEquippedAttackBonus() ?? 0;
+        $currentDefenseBonus = $player->getEquippedDefenseBonus() ?? 0;
+
+        // Si l'objet est déjà équipé et que l'on veut l'équiper, ne rien faire (protection)
+        if ($playerItem->isIsEquipped() && $isEquipping) {
+             return new JsonResponse(['status' => 'success', 'isEquipped' => true, 'newAttack' => $player->getAttack() + $currentAttackBonus, 'newDefense' => $player->getDefense() + $currentDefenseBonus]);
+        }
+        
+        // Logique simplifiée sans déséquipement préalable :
+
+        if ($isEquipping) {
+            $playerItem->setIsEquipped(true);
+            $newAtkBonus = $currentAttackBonus + $item->getAttackBonus();
+            $newDefBonus = $currentDefenseBonus + $item->getDefenseBonus();
+        } else {
+            $playerItem->setIsEquipped(false);
+            $newAtkBonus = $currentAttackBonus - $item->getAttackBonus();
+            $newDefBonus = $currentDefenseBonus - $item->getDefenseBonus();
+        }
+
+        // Mise à jour des bonus équipés sur le joueur
+        $player->setEquippedAttackBonus($newAtkBonus);
+        $player->setEquippedDefenseBonus($newDefBonus);
+        
+    } else {
+         // Si ce n'est pas une arme, ou si l'action est simple, ajustez l'état.
+         $playerItem->setIsEquipped($isEquipping);
+         // Ici, la logique de mise à jour des bonus devient plus complexe car il faudrait déséquiper
+         // l'ancien objet si la slot est unique. Pour l'instant, nous faisons confiance au front.
+    }
+
+    $em->flush();
+
+    // 2. RENVOI DES STATS MISES À JOUR
+    return new JsonResponse([
+        'status' => 'success',
+        'isEquipped' => $playerItem->isIsEquipped(),
+        'newAttack' => $player->getAttack() + ($player->getEquippedAttackBonus() ?? 0),
+        'newDefense' => $player->getDefense() + ($player->getEquippedDefenseBonus() ?? 0),
+    ]);
+}
 
     // Gestion des options (Ressources, Retour)
-    #[Route('/game/handle-option/{locationId}/{optionId}', name: 'game_handle_option', methods: ['GET', 'POST'])]
+  #[Route('/game/handle-option/{locationId}/{optionId}', name: 'game_handle_option', methods: ['GET', 'POST'])]
     public function handleOption(
         Request $request,
         int $locationId,
         int $optionId,
         SessionInterface $session,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        ItemRepository $itemRepository, // Assurez-vous d'avoir ItemRepository injecté
+        PlayerItemRepository $playerItemRepository // Assurez-vous d'avoir PlayerItemRepository injecté
     ): Response {
         if (!$session->has('player_id')) {
             return $this->redirectToRoute('choose_hero');
@@ -253,36 +343,59 @@ class GameController extends AbstractController
         }
 
         switch ($optionId) {
-            case 101: // Continuer le chemin (recharge simplement la page pour le moment)
+            case 101: // Continuer le chemin
                 $this->addFlash('info', 'Vous avancez prudemment dans la zone.');
+                // L'ancien code pointait vers game_location_show, gardons-le simple :
                 return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
 
-            case 102: // Chercher des ressources
-                $chanceToFind = rand(1, 100);
+            case 102: // Chercher des ressources (MAINTENANT AJAX)
+            // ... (Logique de loot existante) ...
+            $player = $em->getRepository(Player::class)->find($session->get('player_id'));
+            
+            // --- LOGIQUE DE LOOT ---
+            $chanceToFind = rand(1, 100);
+            $message = 'Rien trouvé.';
+            $goldChange = 0;
+            $flashType = 'warning';
 
-                if ($chanceToFind <= 70) {
-                    $goldFound = rand(5, 15);
-                    $player->setGold($player->getGold() + $goldFound);
+            if ($chanceToFind <= 70) {
+                // 80% de chance de trouver de l'or seulement (pour simplifier le test)
+                if (rand(1, 100) > 20) { 
+                    $goldChange = rand(5, 15);
+                    $player->setGold($player->getGold() + $goldChange);
                     $em->flush();
-
-                    $message = sprintf('Vous avez trouvé <span class="highlight-item">%d pièces d\'or</span> !', $goldFound);
-                    $this->addFlash('success', $message);
+                    $message = sprintf('Vous avez trouvé <span class="highlight-item">%d pièces d\'or</span> !', $goldChange);
+                    $flashType = 'success';
                 } else {
-                    $this->addFlash('warning', 'Vous n\'avez rien trouvé d\'intéressant');
+                    // Logique pour trouver un item (si le loot d'item est activé)
+                    $message = 'Item trouvé (non implémenté)';
+                    $flashType = 'info';
                 }
-                return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
+            }
+            
+            // --- NOUVEAU : Retourne JSON au lieu de rediriger ---
+            return new JsonResponse([
+                'status' => 'success',
+                'gold' => $player->getGold(),
+                'message' => $message,
+                'flashType' => $flashType,
+                // Si vous voulez aussi renvoyer toutes les stats du joueur:
+                'playerStats' => [
+                    'gold' => $player->getGold(),
+                    'hp' => $player->getHp(),
+                    // ... etc.
+                ]
+            ]);
 
-            case 103: // Retour à la carte
-                $this->addFlash('info', 'Vous êtes de retour sur la carte.');
-                return $this->redirectToRoute('game_explore');
-                
-            case 104: // Fouiller le coffre (Supprimé de la liste, mais si l'ID arrive...)
-            case 105: // Revenir en arrière (Supprimé de la liste, mais si l'ID arrive...)
-            default:
-                $this->addFlash('error', 'Option invalide ou désactivée temporairement.');
-                return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
-        }
+        case 103: // Retour à la carte
+            $this->addFlash('info', 'Vous êtes de retour sur la carte.');
+            return $this->redirectToRoute('game_explore');
+            
+        default:
+            $this->addFlash('error', 'Option invalide.');
+            return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
     }
+}
 
     // Les méthodes nextSceneVariant, previousSceneVariant, determineNextVariant et asset sont SUPPRIMÉES.
 

@@ -14,17 +14,20 @@ class AppFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         // --- Joueur de test ---
-        $player = new Player();
+       $player = new Player();
         $player->setName('Hero')
                ->setHp(100)
+               ->setHpMax(100)           // ✅ AJOUT: Initialisation de HP Max
                ->setAttack(10)
                ->setDefense(5)
                ->setGold(0)
-               ->setExperience(0);
+               ->setExperience(0)
+               ->setLevel(1)             // ✅ CORRECTION: Initialisation de Level
+               ->setPlayerClassId(1)     // ✅ AJOUT: ID de classe par défaut (ex: 1 pour Guerrier)
+               ->setPlayerClassName('Guerrier'); // ✅ AJOUT: Nom de classe
 
         $manager->persist($player);
 
-        // --- Ennemis ---
         $goblin = new Enemy();
         $goblin->setName('Goblin')
                ->setHp(30)
@@ -43,7 +46,6 @@ class AppFixtures extends Fixture
                ->setXpReward(50);
         $manager->persist($dragon);
 
-        // --- Lieux ---
         $forest = new Location();
         $forest->setName('Forêt enchantée')
                ->setDescription('Un lieu mystérieux rempli de créatures.')
@@ -56,22 +58,27 @@ class AppFixtures extends Fixture
                 ->setDangerLevel(2);
         $manager->persist($dungeon);
 
-        // --- Items ---
         $sword = new Item();
         $sword->setName('Épée courte')
               ->setDescription('Une petite épée mais utile.')
               ->setAttackBonus(5)
-              ->setHpBonus(0); // ⚡ Important : toutes les colonnes non nullables doivent avoir une valeur
+              ->setHpBonus(0)
+              ->setType('weapon')      
+              ->setWeaponType('sword') 
+              ->setHealingAmount(0)    
+              ->setImage('sword_short.png'); 
         $manager->persist($sword);
-
+        
         $potion = new Item();
         $potion->setName('Potion de soin')
                ->setDescription('Restaure 20 PV.')
-               ->setAttackBonus(0) // ⚡ Initialisé pour éviter NOT NULL
-               ->setHpBonus(20);
+               ->setAttackBonus(0)
+               ->setHpBonus(0)
+               ->setType('consumable')  
+               ->setHealingAmount(20)   
+               ->setImage('potion.png'); 
         $manager->persist($potion);
 
-        // Envoi en base
         $manager->flush();
     }
 }

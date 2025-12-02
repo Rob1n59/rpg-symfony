@@ -30,6 +30,14 @@ class Player
     #[ORM\Column]
     private ?int $defense = null;
 
+    // NOUVEAU CHAMP : Bonus d'attaque total des objets équipés
+    #[ORM\Column(nullable: true)]
+    private ?int $equippedAttackBonus = 0; 
+    
+    // NOUVEAU CHAMP : Bonus de défense total des objets équipés
+    #[ORM\Column(nullable: true)]
+    private ?int $equippedDefenseBonus = 0; 
+
     #[ORM\Column]
     private ?int $gold = null;
 
@@ -37,17 +45,17 @@ class Player
     private ?int $experience = null;
 
     #[ORM\Column]
-    private ?int $level = null; // Vous avez un getter/setter pour level, donc j'ajoute la propriété
+    private ?int $level = null;
 
-    #[ORM\ManyToOne(targetEntity: Location::class)] // Correction : current_location est un ManyToOne vers Location
-    #[ORM\JoinColumn(nullable: true)] // Peut être null si le joueur n'a pas de localisation au début
+    #[ORM\ManyToOne(targetEntity: Location::class)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Location $currentLocation = null;
 
     #[ORM\Column(nullable: true)]
     private ?int $playerClassId = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $playerClassName = null; // Pour afficher "Guerrier", "Mage", "Archer"
+    private ?string $playerClassName = null;
 
     #[ORM\OneToMany(targetEntity: PlayerItem::class, mappedBy: 'player', orphanRemoval: true)]
     private Collection $playerItems;
@@ -116,6 +124,30 @@ class Player
         $this->defense = $defense;
         return $this;
     }
+    
+    // NOUVEAU GETTER/SETTER pour equippedAttackBonus
+    public function getEquippedAttackBonus(): ?int
+    {
+        return $this->equippedAttackBonus;
+    }
+
+    public function setEquippedAttackBonus(?int $equippedAttackBonus): static
+    {
+        $this->equippedAttackBonus = $equippedAttackBonus;
+        return $this;
+    }
+
+    // NOUVEAU GETTER/SETTER pour equippedDefenseBonus
+    public function getEquippedDefenseBonus(): ?int
+    {
+        return $this->equippedDefenseBonus;
+    }
+
+    public function setEquippedDefenseBonus(?int $equippedDefenseBonus): static
+    {
+        $this->equippedDefenseBonus = $equippedDefenseBonus;
+        return $this;
+    }
 
     public function getGold(): ?int
     {
@@ -161,7 +193,6 @@ class Player
         return $this;
     }
 
-    // --- Getters et Setters pour playerClassId ---
     public function getPlayerClassId(): ?int
     {
         return $this->playerClassId;
@@ -173,7 +204,6 @@ class Player
         return $this;
     }
 
-    // --- Getters et Setters pour playerClassName ---
     public function getPlayerClassName(): ?string
     {
         return $this->playerClassName;
