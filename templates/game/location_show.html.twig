@@ -10,24 +10,27 @@
 {% endblock %}
 
 {% block body %}
+    {# Fond flouté dynamique utilisant l'ID du lieu (Ex: 1.png) #}
+    <div class="game-page-background" style="--blurred-bg-image: url('{{ asset('images/location_scenes/' ~ location.id ~ '.png') }}');"></div>
+
     <div class="game-container">
         {# Panneau des stats du joueur (gauche) #}
         <div class="panel player-stats-panel">
-            <h2>Player Stats</h2>
+            <h2>{{ player.name }}</h2>
             {% set classFileName = player.playerClassName|lower %}
-            {% if classFileName == 'guerrier' %}
-                {% set classFileName = 'warrior' %}
-            {% elseif classFileName == 'mage' %}
-                {% set classFileName = 'mage' %}
-            {% elseif classFileName == 'archer' %}
-                {% set classFileName = 'archer' %}
-            {% endif %}
+            {% if classFileName == 'guerrier' %}{% set classFileName = 'warrior' %}
+            {% elseif classFileName == 'mage' %}{% set classFileName = 'mage' %}
+            {% elseif classFileName == 'archer' %}{% set classFileName = 'archer' %}{% endif %}
             <img src="{{ asset('images/classes/' ~ classFileName ~ '.png') }}" alt="Portrait du {{ player.playerClassName }}" class="player-portrait">
             <div class="player-info">
-                <p><strong>Nom:</strong> {{ player.name }}</p>
-                <p><strong>Classe:</strong> {{ player.playerClassName }}</p>
                 <p><strong>Niveau:</strong> {{ player.level }}</p>
-                <p><strong>HP:</strong> {{ player.hp }} / {{ player.hpMax }}</p>
+                
+                <p class="hp-text"><strong>HP:</strong> {{ player.hp }} / {{ player.hpMax }}</p>
+                <div class="hp-bar-container">
+                    {% set hpPercentage = (player.hp / player.hpMax) * 100 %}
+                    <div class="hp-bar-fill" style="width: {{ hpPercentage }}%;"></div>
+                </div>
+                
                 <p><strong>Attaque:</strong> {{ player.attack }}</p>
                 <p><strong>Défense:</strong> {{ player.defense }}</p>
                 <p><strong>Or:</strong> {{ player.gold }}</p>
@@ -35,19 +38,14 @@
             </div>
         </div>
 
-        {# Zone de jeu principale (image de la scène) #}
-        <div class="main-game-area" style="
-            background-image: url('{{ asset('images/location_scenes/' ~ location.id ~ '.png') }}');
-            ">
-            {# La description du lieu et les boutons ne sont plus ici #}
-        </div>
+        {# Zone de jeu principale (image de la scène utilisant l'ID du lieu) #}
+        <div class="main-game-area" style="background-image: url('{{ asset('images/location_scenes/' ~ location.id ~ '.png') }}');"></div>
 
         {# Panneau d'informations sur le lieu (droite) #}
         <div class="panel location-info-panel">
             <h2>Location</h2>
             <img src="{{ asset('images/location_icons/location_default.png') }}" alt="Icône du lieu" class="location-icon">
             <p><strong>{{ location.name }}</strong></p>
-            {# NOUVEAU : Description du lieu déplacée ici #}
             <p class="location-description">{{ location.description }}</p>
             <p>Danger Level: <span style="color:
                 {% if location.dangerLevel == 'Très faible' %}lightgreen
@@ -58,39 +56,14 @@
                 {% endif %};">
                 {{ location.dangerLevel }}
             </span></p>
-        </div>
 
-        {# Ancien message-box supprimé (était la description au centre) #}
-        {# <div class="message-box">...</div> #}
-
-        {# NOUVEAU : Boîte de logs et d'actions #}
-       <div class="panel game-logs-panel">
-            <h3>Logs d'activités</h3>
-            <div class="logs-content">
-                <p>Bienvenue dans {{ location.name }} !</p>
-                {# Votre bloc last_action_message, si vous le gardez #}
-                {% if app.session.get('last_action_message') %}
-                    <p class="log-entry alert-info">{{ app.session.get('last_action_message')|raw }}</p> {# AJOUTER |raw ICI AUSSI SI last_action_message PEUT CONTENIR DU HTML #}
-                    {% do app.session.remove('last_action_message') %}
-                {% endif %}
-
-                {% for label, messages in app.flashes %}
-                    {% for message in messages %}
-                        <p class="log-entry alert-{{ label }}">
-                            {{ message|raw }} {# <-- TRÈS IMPORTANT : AJOUTEZ LE FILTRE |raw ICI #}
-                        </p>
-                    {% endfor %}
-                {% endfor %}
-
-            </div>
-
-            {# Boutons d'action déplacés ici #}
             <div class="action-buttons">
-                <ul>
-                    {# Les options doivent venir de sceneOptions comme avant, mais affichées ici #}
+                <ul class="js-action-list">
+                    {# Les boutons pointent directement vers la route handleOption et rechargent la page #}
                     {% for option in sceneOptions %}
                         <li>
-                            <a href="{{ path('game_handle_option', {'locationId': location.id, 'optionId': option.id}) }}">
+                            <a href="{{ path('game_handle_option', {'locationId': location.id, 'optionId': option.id}) }}"
+                               data-option-id="{{ option.id }}">
                                 {{ option.text }}
                             </a>
                         </li>
@@ -99,12 +72,38 @@
             </div>
         </div>
 
-    </div>
+        {# Boîte de logs et d'actions #}
+        <div class="panel game-logs-panel">
+            <h3>Logs d'activités</h3>
+            <div class="logs-content">
+                <p>Bienvenue dans {{ location.name }} !</p>
+                
+                {% for label, messages in app.flashes %}
+                    {% for message in messages %}
+                        <p class="log-entry alert-{{ label }}">
+                            {{ message|raw }}
+                        </p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
 
-    {# Flash messages, gardez l'option B si vous les voulez toujours pour les erreurs #}
-    
+    </div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
+    <script>
+        // Le seul JS conservé : s'assurer que les logs sont scrollés en bas
+        document.addEventListener('DOMContentLoaded', function() {
+            const logsContent = document.querySelector('.game-logs-panel .logs-content');
+            
+            function scrollToBottom() {
+                if (logsContent) {
+                    logsContent.scrollTop = logsContent.scrollHeight;
+                }
+            }
+            scrollToBottom();
+        });
+    </script>
 {% endblock %}

@@ -2,13 +2,12 @@
 
 /* --- Styles généraux du corps et du conteneur de jeu --- */
 body {
-    background-color: #2b1d14; /* Couleur de fond sombre et terreuse */
-    color: #e0c8a8; /* Couleur de texte par défaut, un peu plus clair que #FFD700 pour le texte général */
+    background-color: #2b1d14;
+    color: #e0c8a8;
     font-family: "Georgia", serif;
     margin: 0;
-    padding: 0; /* Géré par le game-container et gap */
+    padding: 0;
     display: grid;
-    /* Votre grille existante pour body, mais le game-container prend le dessus */
     grid-template-areas: "game-container";
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
@@ -27,103 +26,132 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5); /* Overlay sombre sur le fond */
+    background-color: rgba(0, 0, 0, 0.5);
     z-index: 1;
 }
 
 .game-container {
     position: relative;
     z-index: 2;
-    /* Ajustez ces valeurs de grille pour qu'elles occupent tout l'espace disponible */
-    /* Ces valeurs remplacent les grid-template-areas/columns/rows du body */
     display: grid;
+    /* GRILLE MISE À JOUR : player-stats-panel prend la hauteur AUTO (compactée) */
     grid-template-areas:
         "player-stats-panel main-game-area location-info-panel"
-        "player-stats-panel game-logs-panel location-info-panel";
-    grid-template-columns: 280px 1fr 280px; /* Panneaux latéraux un peu plus larges */
-    grid-template-rows: auto 1fr; /* Le haut (main-game-area) auto, le bas (logs) prend le reste */
+        "game-logs-panel main-game-area location-info-panel";
+    grid-template-columns: 280px 1fr 280px; /* Colonnes inchangées */
+    grid-template-rows: 1fr 1fr; /* RANGÉES : La première ligne (stats) est auto, la deuxième (logs) prend le reste */
     gap: 20px;
     height: 100vh;
-    padding: 20px; /* Padding autour du conteneur de jeu */
-    box-sizing: border-box; /* Inclut le padding dans la hauteur */
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 /* --- Styles des panneaux généraux --- */
 .panel {
-    background-color: rgba(18, 10, 5, 0.9); /* Fond très sombre, presque noir, avec transparence */
-    border: 1px solid #4a3a2b; /* Bordure plus foncée, terreuse */
+    background-color: rgba(18, 10, 5, 0.9);
+    border: 1px solid #4a3a2b;
     border-radius: 8px;
     padding: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Ombre douce et profonde */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    color: #e0c8a8; /* Couleur de texte par défaut pour les panneaux */
+    color: #e0c8a8;
 }
 
 /* --- Panneau des stats du joueur (gauche) --- */
 .player-stats-panel {
-    grid-area: player-stats-panel;
+    grid-area: player-stats-panel; /* Prend seulement la première rangée */
     text-align: center;
-    gap: 10px; /* Espace entre les éléments flex */
+    gap: 5px; /* Réduit l'espace entre les éléments */
+    /* NOUVEAU : Assure que le contenu s'arrête là où il doit */
+    overflow: hidden; 
 }
-
 .player-stats-panel h2 {
     margin-top: 0;
-    font-size: 1.6em;
-    color: #FFD700; /* Titre doré */
+    font-size: 1.2em; /* Taille réduite pour être le nom */
+    color: #FFD700;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-    margin-bottom: 15px;
+    margin-bottom: 5px; /* Réduit la marge */
 }
 
 .player-portrait {
-    width: 120px; /* Taille légèrement plus grande */
-    height: 120px;
+    width: 80px; /* Taille réduite */
+    height: 80px;
     border-radius: 50%;
-    border: 3px solid #FFD700; /* Bordure dorée plus prononcée */
+    border: 3px solid #FFD700;
     object-fit: cover;
-    margin: 0 auto 15px;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); /* Légère lueur dorée autour du portrait */
+    margin: 0 auto 10px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
 }
 
 .player-info p {
-    margin: 6px 0;
-    font-size: 0.95em;
-    line-height: 1.3;
+    margin: 4px 0; /* Réduit la marge entre les lignes */
+    font-size: 0.9em;
+    line-height: 1.2;
+}
+
+/* --- Style pour la barre de vie --- */
+.hp-bar-container {
+    width: 90%; /* Largeur de la barre */
+    height: 10px; /* Hauteur de la barre */
+    background-color: #333;
+    border: 1px solid #FFD700;
+    border-radius: 4px;
+    margin: 5px auto 5px auto; /* Marge au-dessus et en dessous des textes */
+    overflow: hidden;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+
+.hp-bar-fill {
+    height: 100%;
+    background-color: #dc3545; /* Rouge vif pour la vie */
+    transition: width 0.3s ease-in-out;
+}
+
+.hp-text { /* Pour donner un peu plus de marge au texte HP au-dessus de la barre */
+    margin-bottom: 0;
 }
 
 .player-info p strong {
-    color: #FFD700; /* Noms des attributs en doré */
+    color: #FFD700;
 }
-
 
 /* --- Panneau d'informations sur le lieu (droite) --- */
 .location-info-panel {
-    grid-area: location-info-panel;
+    /* Styles de base inchangés pour la grille et le flex */
+    grid-area: location-info-panel; 
     text-align: center;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Pour pousser les boutons en bas */
+    gap: 10px; 
+    padding: 15px; /* S'assurer d'un bon padding si margin est utilisé */
 }
 
 .location-info-panel h2 {
-    margin-top: 0;
+    margin-top: 0; /* Assurez-vous qu'il n'y ait pas de marge supérieure inutile */
     font-size: 1.6em;
-    color: #FFD700; /* Titre doré */
+    color: #FFD700;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-    margin-bottom: 15px;
+    margin-bottom: 10px; /* Laissez une petite marge sous le titre principal "Location" */
 }
-
+.location-info-panel p {
+    /* Le .location-info-panel étant en flex-direction: column, les marges du haut
+       devraient être réduites au minimum pour remonter le contenu. */
+    margin-top: 0; 
+}
 .location-description {
     margin: 15px 0;
     font-style: italic;
-    color: #c0b098; /* Description un peu plus terne */
+    color: #c0b098;
     line-height: 1.5;
 }
 
 .location-icon {
-    width: 90px;
-    height: 90px;
-    margin: 0 auto 15px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); /* Lueur dorée pour l'icône */
+    /* Cette règle masque l'icône, car elle est chargée dans le HTML */
+    display: none; 
+    /* Ou si vous préférez la supprimer du HTML : */
+    /* Dans location_show.html.twig, supprimez: <img src="{{ asset(...) }}" class="location-icon"> */
 }
 
 /* --- Zone de jeu principale (image de la scène) --- */
@@ -132,38 +160,37 @@ body::before {
     background-size: cover;
     background-position: center;
     border-radius: 8px;
-    border: 1px solid #4a3a2b; /* Bordure cohérente */
+    border: 1px solid #4a3a2b;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    min-height: 400px; /* Conserver une hauteur minimale */
+    min-height: 400px;
 }
 
 /* --- Panneau des logs et actions (en bas au centre) --- */
 .game-logs-panel {
     grid-area: game-logs-panel;
-    display: flex; /* Déjà là, mais pour rappel */
-    flex-direction: column; /* Déjà là, mais pour rappel */
-    justify-content: space-between; /* Pousse les boutons en bas */
-    overflow: hidden; /* Important pour gérer le scroll interne */
-    /* La max-height est gérée par le grid-template-rows: auto 1fr; du game-container */
-    /* On peut ajouter une min-height si on veut, mais 1fr gère la hauteur */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    min-height: 200px; /* FIX 2: Garantit une hauteur minimale pour le panneau de logs */
 }
 
 .game-logs-panel h3 {
     text-align: center;
-    color: #FFD700; /* Titre doré */
+    color: #FFD700;
     margin: 15px 0 10px 0;
     font-size: 1.4em;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    border-bottom: 1px solid rgba(74, 58, 43, 0.5); /* Ligne de séparation subtile */
+    border-bottom: 1px solid rgba(74, 58, 43, 0.5);
     padding-bottom: 10px;
 }
 
 .logs-content {
-    flex-grow: 1; /* Permet au contenu de prendre l'espace restant */
-    padding: 0 15px 10px 15px; /* Padding ajusté */
-    overflow-y: auto; /* Permet le défilement si trop de logs */
-    scrollbar-width: thin; /* Firefox */
-    scrollbar-color: #6b4e2a #1a1008; /* Firefox scrollbar color */
+    flex-grow: 1;
+    padding: 0 15px 10px 15px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #6b4e2a #1a1008;
 }
 
 /* Custom scrollbar for Webkit browsers */
@@ -181,74 +208,75 @@ body::before {
 }
 
 /* --- Styles des entrées de log individuelles --- */
-.logs-content p { /* Style par défaut pour les paragraphes statiques (ex: Bienvenue) */
-    color: #e0c8a8; /* Texte clair par défaut */
+.logs-content p {
+    color: #e0c8a8;
     margin-bottom: 8px;
     line-height: 1.4;
     font-size: 0.9em;
     padding: 0;
 }
 
-.logs-content .log-entry { /* Style pour les flash messages */
-    padding: 10px 15px; /* Un peu plus de padding */
-    margin-bottom: 10px; /* Plus d'espace entre les messages */
-    border-radius: 5px; /* Coins légèrement arrondis */
-    font-size: 0.95em; /* Texte un peu plus grand */
+.logs-content .log-entry {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    font-size: 0.95em;
     text-align: left;
     word-wrap: break-word;
-    border: 1px solid rgba(74, 58, 43, 0.6); /* Bordure subtile pour distinguer */
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4); /* Légère ombre pour donner du relief */
-    background-color: rgba(30, 20, 10, 0.8); /* Fond du log pour contraster un peu */
+    border: 1px solid rgba(74, 58, 43, 0.6);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    background-color: rgba(30, 20, 10, 0.8);
 }
 
 /* Styles spécifiques pour chaque type de flash message */
 .logs-content .alert-success { 
-    background-color: rgba(40, 100, 40, 0.85); /* Vert foncé avec plus d'opacité */
-    border-left: 4px solid #81c784; /* Bordure verte plus vive */
-    color: #e0ffe0; /* Texte vert très clair */
+    background-color: rgba(40, 100, 40, 0.85);
+    border-left: 4px solid #81c784;
+    color: #e0ffe0;
     font-weight: bold;
 }
-.logs-content .alert-info {    
-    background-color: rgba(30, 80, 120, 0.85); /* Bleu-gris foncé avec plus d'opacité */
-    border-left: 4px solid #90caf9; /* Bordure bleu clair */
-    color: #e0f2f7; /* Texte bleu très clair */
+.logs-content .alert-info {     
+    background-color: rgba(30, 80, 120, 0.85);
+    border-left: 4px solid #90caf9;
+    color: #e0f2f7;
 }
 .logs-content .alert-warning { 
-    background-color: rgba(120, 80, 30, 0.85);  /* Marron-orange avec plus d'opacité */
-    border-left: 4px solid #ffcc80; /* Bordure orange doré */
-    color: #333; /* Texte plus foncé pour contraste sur fond clair */
+    background-color: rgba(120, 80, 30, 0.85);
+    border-left: 4px solid #ffcc80;
+    color: #333;
     font-weight: bold;
 } 
-.logs-content .alert-danger {  
-    background-color: rgba(150, 40, 40, 0.85);  /* Rouge bordeaux avec plus d'opacité */
-    border-left: 4px solid #ef9a9a; /* Bordure rouge vif */
-    color: #ffe0e0; /* Texte rouge très clair */
+.logs-content .alert-danger {     
+    background-color: rgba(150, 40, 40, 0.85);
+    border-left: 4px solid #ef9a9a;
+    color: #ffe0e0;
     font-weight: bold;
-    text-transform: uppercase; /* Met en majuscules pour attirer l'attention */
+    text-transform: uppercase;
 }
 
 /* --- Style pour la surbrillance des objets/valeurs trouvées --- */
 .logs-content .highlight-item {
-    color: #FFD700; /* Jaune doré (comme votre thème) */
+    color: #FFD700;
     font-weight: bold;
-    text-shadow: 0 0 6px rgba(255, 215, 0, 0.7); /* Lueur dorée plus prononcée */
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.7);
 }
 
 /* --- Styles des boutons d'action --- */
 .action-buttons {
-    margin-top: auto; /* Pousse les boutons en bas du panneau */
+    margin-top: auto;
     padding: 15px;
-    border-top: 1px solid rgba(74, 58, 43, 0.5); /* Ligne de séparation */
-    background-color: rgba(18, 10, 5, 0.8); /* Fond légèrement plus clair pour les boutons */
+    border-top: 1px solid rgba(74, 58, 43, 0.5);
+    background-color: rgba(18, 10, 5, 0.8);
 }
 
 .action-buttons ul {
+    /* Styles existants */
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px; /* Plus d'espace entre les boutons */
+    gap: 15px; /* Augmenter le gap pour mieux répartir les boutons */
 }
 
 .action-buttons li {
@@ -257,35 +285,41 @@ body::before {
 
 .action-buttons a {
     display: block;
-    padding: 14px 25px; /* Un peu plus de padding pour des boutons plus grands */
-    background-color: #5a3d20; /* Couleur de bouton terreuse */
+    /* FIX 3: Réduction de la taille des boutons */
+    width: 90%; /* S'assure que le bouton utilise une bonne largeur */
+    max-width: 250px; /* Limite la largeur pour ne pas s'étirer excessivement */
+    margin: 0 auto; /* CENTRE LE BOUTON HORIZONTALEMENT */
+    padding: 15px 25px; /* Augmenter le padding pour agrandir la hauteur du bouton */
+    font-size: 1.1em;
+    padding: 10px 15px; 
+    background-color: #5a3d20;
     border: 1px solid #4a3a2b;
-    border-radius: 6px; /* Coins légèrement plus arrondis */
-    color: #e0c8a8; /* Texte clair */
+    border-radius: 6px;
+    color: #e0c8a8;
     text-align: center;
     text-decoration: none;
-    font-size: 1.05em; /* Texte un peu plus grand */
+    font-size: 0.95em; 
     font-weight: bold;
-    letter-spacing: 0.5px; /* Espacement des lettres pour un look plus stylisé */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Ombre sur le texte */
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 .action-buttons a:hover {
-    background-color: #7b5b3a; /* Couleur plus claire au survol */
-    transform: translateY(-2px); /* Effet de soulèvement plus prononcé */
+    background-color: #7b5b3a;
+    transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
-    color: #FFD700; /* Texte doré au survol */
+    color: #FFD700;
 }
 
 .action-buttons a:active {
-    background-color: #4a3a2b; /* Couleur plus foncée au clic */
+    background-color: #4a3a2b;
     transform: translateY(0);
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-/* --- Responsive Adjustments (ex: pour les petits écrans) --- */
+/* --- Responsive Adjustments --- */
 @media (max-width: 1200px) {
     .game-container {
         grid-template-columns: 200px 1fr 200px;
@@ -318,29 +352,29 @@ body::before {
             "location-info-panel main-game-area"
             "game-logs-panel game-logs-panel";
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto 1fr; /* 3 rangées */
-        height: auto; /* Permet au contenu de s'étendre verticalement */
+        grid-template-rows: auto auto 1fr;
+        height: auto;
         padding: 10px;
     }
     .main-game-area {
         min-height: 300px;
     }
     .player-stats-panel, .location-info-panel {
-        flex-direction: row; /* Met les éléments côte à côte pour gagner de la place */
-        flex-wrap: wrap; /* Permet de passer à la ligne si pas assez de place */
+        flex-direction: row;
+        flex-wrap: wrap;
         justify-content: center;
         align-items: center;
         gap: 10px;
         text-align: left;
     }
     .player-portrait, .location-icon {
-        margin: 0 10px 0 0; /* Ajuste la marge */
+        margin: 0 10px 0 0;
     }
     .player-info {
-        flex-grow: 1; /* Permet aux infos de prendre l'espace restant */
+        flex-grow: 1;
     }
     .game-logs-panel {
-        max-height: 400px; /* Fixe une max-height pour les logs en mode compact */
+        max-height: 400px;
     }
 }
 
@@ -352,17 +386,39 @@ body::before {
             "location-info-panel"
             "game-logs-panel";
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto 1fr; /* Chaque panneau sur sa propre ligne */
+        grid-template-rows: auto auto auto 1fr;
         gap: 10px;
     }
     .main-game-area {
         min-height: 250px;
     }
     .player-stats-panel, .location-info-panel {
-        flex-direction: column; /* Reviens en colonne pour occuper la largeur */
+        flex-direction: column;
         text-align: center;
     }
     .player-portrait, .location-icon {
         margin: 0 auto 10px;
     }
+}
+.game-page-background {
+    /* Positionnement fixe pour couvrir tout l'écran */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* S'assure qu'il est derrière tout le contenu */
+    
+    /* Utilisation de la variable CSS définie dans Twig */
+    background-image: var(--blurred-bg-image); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    /* L'effet de flou et d'opacité ! */
+    filter: blur(5px); /* Ajustez la valeur (ex: 5px à 15px) pour plus/moins de flou */
+    opacity: 15; /* Ajustez pour un fond plus ou moins sombre */
+    
+    /* Petite astuce pour cacher les bords flous et nets du conteneur */
+    transform: scale(1.02);
 }
