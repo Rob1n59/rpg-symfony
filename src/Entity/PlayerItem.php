@@ -15,14 +15,18 @@ class PlayerItem
 
     #[ORM\ManyToOne(targetEntity: Player::class, inversedBy: 'playerItems')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Player $player = null;
+    private ?Player $player = null; 
 
     #[ORM\ManyToOne(targetEntity: Item::class, inversedBy: 'playerItems')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Item $item = null;
+    private ?Item $item = null;   
 
     #[ORM\Column]
-    private ?int $quantity = 1; // Quantité de l'objet que le joueur possède
+    private ?int $quantity = 1;
+
+    // Ajout du statut d'équipement
+    #[ORM\Column]
+    private ?bool $isEquipped = false;
 
     public function getId(): ?int
     {
@@ -37,7 +41,6 @@ class PlayerItem
     public function setPlayer(?Player $player): static
     {
         $this->player = $player;
-
         return $this;
     }
 
@@ -49,7 +52,6 @@ class PlayerItem
     public function setItem(?Item $item): static
     {
         $this->item = $item;
-
         return $this;
     }
 
@@ -61,7 +63,17 @@ class PlayerItem
     public function setQuantity(int $quantity): static
     {
         $this->quantity = $quantity;
+        return $this;
+    }
 
+    public function isIsEquipped(): ?bool
+    {
+        return $this->isEquipped;
+    }
+
+    public function setIsEquipped(bool $isEquipped): static
+    {
+        $this->isEquipped = $isEquipped;
         return $this;
     }
 }

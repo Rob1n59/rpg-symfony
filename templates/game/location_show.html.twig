@@ -30,6 +30,7 @@
                     {% set hpPercentage = (player.hp / player.hpMax) * 100 %}
                     <div class="hp-bar-fill" style="width: {{ hpPercentage }}%;"></div>
                 </div>
+                <button id="inventory-button" class="action-button inventory-action-btn">Inventaire</button>
                 
                 <p><strong>Attaque:</strong> {{ player.attack }}</p>
                 <p><strong>Défense:</strong> {{ player.defense }}</p>
@@ -87,6 +88,21 @@
                 {% endfor %}
             </div>
         </div>
+        {# FENÊTRE MODALE D'INVENTAIRE #}
+        <div id="inventory-modal" class="modal-overlay hidden">
+        <div class="inventory-window">
+            <h3>Inventaire du joueur</h3>
+        
+            <div class="inventory-grid">
+            {# C'est ici que les items réels seront affichés via AJAX ou PHP, mais pour l'instant, c'est la structure #}
+                {% for i in 1..15 %} {# 15 slots d'inventaire #}
+                <div class="inventory-slot"></div>
+                {% endfor %}
+        </div>
+        
+        <button id="close-inventory-button" class="action-button">Fermer</button>
+    </div>
+</div>
 
     </div>
 {% endblock %}
@@ -94,16 +110,50 @@
 {% block javascripts %}
     {{ parent() }}
     <script>
-        // Le seul JS conservé : s'assurer que les logs sont scrollés en bas
         document.addEventListener('DOMContentLoaded', function() {
             const logsContent = document.querySelector('.game-logs-panel .logs-content');
             
+            // Éléments de l'inventaire
+            const inventoryButton = document.getElementById('inventory-button');
+            const inventoryModal = document.getElementById('inventory-modal');
+            const closeButton = document.getElementById('close-inventory-button');
+
+            // Helper pour faire défiler les logs
             function scrollToBottom() {
                 if (logsContent) {
                     logsContent.scrollTop = logsContent.scrollHeight;
                 }
             }
             scrollToBottom();
+
+            // -------------------------------------------------------------------
+            // Logique de la fenêtre modale d'inventaire
+            // -------------------------------------------------------------------
+
+            if (inventoryButton && inventoryModal && closeButton) {
+                // 1. Ouvre la modale
+                inventoryButton.addEventListener('click', (e) => {
+                    e.preventDefault(); // Empêche la navigation si c'est un <a>
+                    inventoryModal.classList.remove('hidden');
+                });
+
+                // 2. Ferme la modale via le bouton 'Fermer'
+                closeButton.addEventListener('click', () => {
+                    inventoryModal.classList.add('hidden');
+                });
+
+                // 3. Ferme la modale si l'utilisateur clique sur l'overlay (en dehors de la fenêtre)
+                inventoryModal.addEventListener('click', (e) => {
+                    // Vérifie si l'élément cliqué est bien l'overlay (et non le contenu de la fenêtre)
+                    if (e.target === inventoryModal) {
+                        inventoryModal.classList.add('hidden');
+                    }
+                });
+            }
+            // -------------------------------------------------------------------
+            
+            // NOTE: Vous aurez besoin du code AJAX/Fetch ici pour les actions non-AJAX (Ressources, etc.)
+            // mais nous nous concentrons sur la modale pour l'instant.
         });
     </script>
 {% endblock %}

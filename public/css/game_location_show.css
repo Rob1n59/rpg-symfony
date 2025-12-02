@@ -66,6 +66,24 @@ body::before {
     /* NOUVEAU : Assure que le contenu s'arrête là où il doit */
     overflow: hidden; 
 }
+
+.inventory-action-btn {
+    margin-top: auto; /* Pousse le bouton vers le bas du panneau stats */
+    padding: 10px 15px;
+    font-size: 1em;
+    background-color: #4a3a2b; /* Couleur bois plus foncée */
+    border: 2px solid #6b4e2a;
+    border-radius: 6px;
+    color: #FFD700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.inventory-action-btn:hover {
+    background-color: #6b4e2a;
+}
+
 .player-stats-panel h2 {
     margin-top: 0;
     font-size: 1.2em; /* Taille réduite pour être le nom */
@@ -421,4 +439,87 @@ body::before {
     
     /* Petite astuce pour cacher les bords flous et nets du conteneur */
     transform: scale(1.02);
+}
+/* --- 1. Style du Conteneur Modal (Overlay transparent) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Fond noir semi-transparent et très sombre */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* TRÈS important : s'assure d'être au-dessus de tout (z-index: 2 du game-container) */
+    
+    /* Transition douce pour l'apparition/disparition */
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Règle pour cacher la modale */
+.modal-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Empêche les interactions quand elle est invisible */
+}
+
+/* --- 2. La Fenêtre d'Inventaire (le panneau central) --- */
+.inventory-window {
+    background-color: #2b1d14; /* Couleur de fond cohérente avec votre thème sombre */
+    border: 3px solid #6b4e2a; /* Bordure marron/dorée */
+    border-radius: 12px;
+    padding: 30px;
+    width: 90%;
+    max-width: 700px; /* Taille maximale pour un inventaire */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.9);
+    text-align: center;
+}
+
+.inventory-window h3 {
+    color: #FFD700;
+    font-size: 2em;
+    margin-top: 0;
+    margin-bottom: 25px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    border-bottom: 1px solid rgba(107, 78, 42, 0.5);
+    padding-bottom: 10px;
+}
+
+/* --- 3. La Grille des emplacements d'objets --- */
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 colonnes pour les objets */
+    gap: 15px; /* Espace entre les emplacements */
+    padding: 10px;
+    margin-bottom: 25px;
+}
+
+.inventory-slot {
+    width: 80px; /* Taille de l'emplacement (slot) */
+    height: 80px;
+    background-color: #4a3a2b; /* Couleur des emplacements vides */
+    border: 2px solid #7a5c48;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.inventory-slot:hover {
+    border-color: #FFD700; /* Doré au survol */
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* --- 4. Bouton de fermeture (utilise le style des boutons d'action existants) --- */
+.inventory-window .action-button {
+    /* Reprise des styles de vos boutons d'action */
+    margin-top: 10px;
+    padding: 12px 30px;
+    font-size: 1.1em;
 }
