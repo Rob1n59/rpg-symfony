@@ -316,74 +316,111 @@ public function equipItem(
 }
 
     // Gestion des options (Ressources, Retour)
-  #[Route('/game/handle-option/{locationId}/{optionId}', name: 'game_handle_option', methods: ['GET', 'POST'])]
-    public function handleOption(
-        Request $request,
-        int $locationId,
-        int $optionId,
-        SessionInterface $session,
-        EntityManagerInterface $em,
-        ItemRepository $itemRepository, // Assurez-vous d'avoir ItemRepository injecté
-        PlayerItemRepository $playerItemRepository // Assurez-vous d'avoir PlayerItemRepository injecté
-    ): Response {
-        if (!$session->has('player_id')) {
-            return $this->redirectToRoute('choose_hero');
-        }
+ #[Route('/game/handle-option/{locationId}/{optionId}', name: 'game_handle_option', methods: ['GET', 'POST'])]
+public function handleOption(
+    Request $request,
+    int $locationId,
+    int $optionId,
+    SessionInterface $session,
+    EntityManagerInterface $em,
+    ItemRepository $itemRepository,
+    PlayerItemRepository $playerItemRepository
+): Response {
+    if (!$session->has('player_id')) {
+        return $this->redirectToRoute('choose_hero');
+    }
 
-        $player = $em->getRepository(Player::class)->find($session->get('player_id'));
-        if (!$player) {
-            $this->addFlash('error', 'Joueur non trouvé.');
-            return $this->redirectToRoute('choose_hero');
-        }
+    $player = $em->getRepository(Player::class)->find($session->get('player_id'));
+    if (!$player) {
+        $this->addFlash('error', 'Joueur non trouvé.');
+        return $this->redirectToRoute('choose_hero');
+    }
 
-        $currentLocation = $this->getLocationDataById($locationId);
-        if (!$currentLocation) {
-            $this->addFlash('error', 'Lieu introuvable.');
-            return $this->redirectToRoute('game_explore');
-        }
+    $currentLocation = $this->getLocationDataById($locationId);
+    if (!$currentLocation) {
+        $this->addFlash('error', 'Lieu introuvable.');
+        return $this->redirectToRoute('game_explore');
+    }
 
-        switch ($optionId) {
-            case 101: // Continuer le chemin
-                $this->addFlash('info', 'Vous avancez prudemment dans la zone.');
-                // L'ancien code pointait vers game_location_show, gardons-le simple :
-                return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
+    // --- Variables de retour AJAX / FLASH ---
+    $goldChange = 0;
+    $message = 'Rien trouvé.';
+    $flashType = 'warning';
+    $newPlayerStats = [];
+    // ------------------------------------------
 
-            case 102: // Chercher des ressources (MAINTENANT AJAX)
-            // ... (Logique de loot existante) ...
-            $player = $em->getRepository(Player::class)->find($session->get('player_id'));
-            
-            // --- LOGIQUE DE LOOT ---
+    switch ($optionId) {
+        case 101: // Continuer le chemin
+            $this->addFlash('info', 'Vous avancez prudemment dans la zone.');
+            return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
+
+        case 102: // Chercher des ressources (LOOT COMPLET)
             $chanceToFind = rand(1, 100);
-            $message = 'Rien trouvé.';
-            $goldChange = 0;
-            $flashType = 'warning';
 
             if ($chanceToFind <= 70) {
-                // 80% de chance de trouver de l'or seulement (pour simplifier le test)
-                if (rand(1, 100) > 20) { 
+                // 30% de chance de trouver un objet (sur le succès)
+                if (rand(1, 100) <= 30) { 
+                    
+                    $availableItemNames = ['Épée en Fer', 'Hache de Bois', 'Arc Court', 'Bâton de Saule', 'Potion de soin'];
+                    $randomItemName = $availableItemNames[array_rand($availableItemNames)];
+                    $foundItem = $itemRepository->findOneBy(['name' => $randomItemName]);
+                    
+                    if ($foundItem) {
+                        $existingPlayerItem = $playerItemRepository->findOneBy(['player' => $player, 'item' => $foundItem]);
+                        $isConsumable = $foundItem->getType() === 'consumable';
+                        
+                        if ($existingPlayerItem && $isConsumable) {
+                            $existingPlayerItem->setQuantity($existingPlayerItem->getQuantity() + 1);
+                            $em->flush();
+                            $message = sprintf('Vous avez trouvé une <span class="highlight-item">%s</span> et en avez maintenant %d !', $foundItem->getName(), $existingPlayerItem->getQuantity());
+                            $flashType = 'success';
+                        } elseif (!$existingPlayerItem) {
+                            $playerItem = new PlayerItem();
+                            $playerItem->setPlayer($player);
+                            $playerItem->setItem($foundItem);
+                            $playerItem->setQuantity(1);
+                            $playerItem->setIsEquipped(false);
+                            $em->persist($playerItem);
+                            $em->flush();
+
+                            $message = sprintf('Vous avez trouvé une <span class="highlight-item">%s</span> !', $foundItem->getName());
+                            $flashType = 'success';
+                        } else {
+                            $message = 'Vous avez trouvé une ' . $foundItem->getName() . ', mais vous ne pouvez pas la porter !';
+                            $flashType = 'warning';
+                        }
+                    } else {
+                        // Fallback: Si l'entité Item est manquante, donne de l'or
+                        $goldChange = rand(5, 10);
+                        $player->setGold($player->getGold() + $goldChange);
+                        $em->flush();
+                        $message = sprintf('Vous avez trouvé <span class="highlight-item">%d pièces d\'or</span> !', $goldChange);
+                        $flashType = 'success';
+                    }
+                } else {
+                    // Chance de trouver de l'or seulement
                     $goldChange = rand(5, 15);
                     $player->setGold($player->getGold() + $goldChange);
                     $em->flush();
                     $message = sprintf('Vous avez trouvé <span class="highlight-item">%d pièces d\'or</span> !', $goldChange);
                     $flashType = 'success';
-                } else {
-                    // Logique pour trouver un item (si le loot d'item est activé)
-                    $message = 'Item trouvé (non implémenté)';
-                    $flashType = 'info';
                 }
+            } else {
+                $message = 'Vous n\'avez rien trouvé d\'intéressant';
+                $flashType = 'warning';
             }
             
-            // --- NOUVEAU : Retourne JSON au lieu de rediriger ---
+            // Après avoir traité, nous renvoyons la réponse JSON pour AJAX
             return new JsonResponse([
                 'status' => 'success',
-                'gold' => $player->getGold(),
                 'message' => $message,
                 'flashType' => $flashType,
-                // Si vous voulez aussi renvoyer toutes les stats du joueur:
                 'playerStats' => [
                     'gold' => $player->getGold(),
                     'hp' => $player->getHp(),
-                    // ... etc.
+                    // Ajout des stats totales Attaque/Défense (y compris équipement)
+                    'attack' => $player->getAttack() + ($player->getEquippedAttackBonus() ?? 0),
+                    'defense' => $player->getDefense() + ($player->getEquippedDefenseBonus() ?? 0),
                 ]
             ]);
 

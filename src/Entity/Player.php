@@ -6,6 +6,7 @@ use App\Repository\PlayerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\EntityManagerInterface; // IMPORTANT: Ajout pour le calcul des stats via BDD
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 class Player
@@ -30,11 +31,10 @@ class Player
     #[ORM\Column]
     private ?int $defense = null;
 
-    // NOUVEAU CHAMP : Bonus d'attaque total des objets équipés
+    // Bonus d'attaque et de défense provenant de l'équipement (mis à jour par le contrôleur)
     #[ORM\Column(nullable: true)]
     private ?int $equippedAttackBonus = 0; 
     
-    // NOUVEAU CHAMP : Bonus de défense total des objets équipés
     #[ORM\Column(nullable: true)]
     private ?int $equippedDefenseBonus = 0; 
 
@@ -64,6 +64,32 @@ class Player
     {
         $this->playerItems = new ArrayCollection();
     }
+    
+    // --- NOUVELLES MÉTHODES DE CALCUL DES STATS TOTALES ---
+
+    /**
+     * Calcule l'Attaque totale (Base + Bonus Equipés).
+     * @param EntityManagerInterface $em L'EntityManager est nécessaire pour l'injection via service/contrôleur.
+     */
+    public function calculateTotalAttack(EntityManagerInterface $em): int
+    {
+        // On retourne l'attaque de base PLUS le bonus qui est géré et persisté par le contrôleur.
+        return ($this->attack ?? 0) + ($this->equippedAttackBonus ?? 0);
+    }
+
+    /**
+     * Calcule la Défense totale (Base + Bonus Equipés).
+     * @param EntityManagerInterface $em L'EntityManager est nécessaire pour l'injection via service/contrôleur.
+     */
+    public function calculateTotalDefense(EntityManagerInterface $em): int
+    {
+        // On retourne la défense de base PLUS le bonus qui est géré et persisté par le contrôleur.
+        return ($this->defense ?? 0) + ($this->equippedDefenseBonus ?? 0);
+    }
+    
+    // --- FIN DES MÉTHODES DE CALCUL ---
+    
+    // ... (Reste des getters et setters, qui sont inchangés) ...
 
     public function getId(): ?int
     {
@@ -125,7 +151,6 @@ class Player
         return $this;
     }
     
-    // NOUVEAU GETTER/SETTER pour equippedAttackBonus
     public function getEquippedAttackBonus(): ?int
     {
         return $this->equippedAttackBonus;
@@ -137,7 +162,6 @@ class Player
         return $this;
     }
 
-    // NOUVEAU GETTER/SETTER pour equippedDefenseBonus
     public function getEquippedDefenseBonus(): ?int
     {
         return $this->equippedDefenseBonus;
