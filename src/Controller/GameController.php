@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Repository\PlayerItemRepository;
 use App\Entity\PlayerItem;
 use App\Repository\ItemRepository;
+use App\Service\InventoryService;
 
 class GameController extends AbstractController
 {
@@ -246,72 +247,37 @@ class GameController extends AbstractController
     ]);
 }
     // src/Controller/GameController.php (Méthode à ajouter)
-
-#[Route('/game/equip_item/{playerItemId}/{action}', name: 'game_equip_item', methods: ['POST'])]
+#[Route('/game/equip_item/{playerItemId}', name: 'game_equip_item', methods: ['POST'])]
 public function equipItem(
     int $playerItemId,
-    string $action,
     SessionInterface $session,
     EntityManagerInterface $em,
-    // PlayerRepository $playerRepository (si besoin)
+    InventoryService $inventoryService // Injection automatique du service
 ): JsonResponse {
     $playerId = $session->get('player_id');
     $player = $em->getRepository(Player::class)->find($playerId);
     $playerItem = $em->getRepository(PlayerItem::class)->find($playerItemId);
 
+    // Vérification de sécurité
     if (!$player || !$playerItem || $playerItem->getPlayer()->getId() !== $playerId) {
         return new JsonResponse(['status' => 'error', 'message' => 'Objet ou joueur invalide.'], 400);
     }
+    
+    try {
+        // Le service gère la bascule (équipé <-> déséquipé) et le recalcul des stats.
+        $inventoryService->toggleEquipItem($player, $playerItem);
 
-    $item = $playerItem->getItem();
-    $isEquipping = $action === 'equip';
-
-    // 1. Déséquiper tout autre objet du même type (Par exemple, un seul 'weapon' équipé à la fois)
-    if ($isEquipping && $item->getType() === 'weapon') {
-        // Logique pour déséquiper l'ancienne arme et mettre à jour le bonus total
-        // (Ceci serait une requête Doctrine personnalisée pour trouver l'arme équipée)
-        // Pour l'instant, nous simplifions en mettant à jour le playerItem cliqué.
-        
-        // Supposons que vous avez un service pour gérer les bonus. Pour l'instant, calculons directement:
-        $currentAttackBonus = $player->getEquippedAttackBonus() ?? 0;
-        $currentDefenseBonus = $player->getEquippedDefenseBonus() ?? 0;
-
-        // Si l'objet est déjà équipé et que l'on veut l'équiper, ne rien faire (protection)
-        if ($playerItem->isIsEquipped() && $isEquipping) {
-             return new JsonResponse(['status' => 'success', 'isEquipped' => true, 'newAttack' => $player->getAttack() + $currentAttackBonus, 'newDefense' => $player->getDefense() + $currentDefenseBonus]);
-        }
-        
-        // Logique simplifiée sans déséquipement préalable :
-
-        if ($isEquipping) {
-            $playerItem->setIsEquipped(true);
-            $newAtkBonus = $currentAttackBonus + $item->getAttackBonus();
-            $newDefBonus = $currentDefenseBonus + $item->getDefenseBonus();
-        } else {
-            $playerItem->setIsEquipped(false);
-            $newAtkBonus = $currentAttackBonus - $item->getAttackBonus();
-            $newDefBonus = $currentDefenseBonus - $item->getDefenseBonus();
-        }
-
-        // Mise à jour des bonus équipés sur le joueur
-        $player->setEquippedAttackBonus($newAtkBonus);
-        $player->setEquippedDefenseBonus($newDefBonus);
-        
-    } else {
-         // Si ce n'est pas une arme, ou si l'action est simple, ajustez l'état.
-         $playerItem->setIsEquipped($isEquipping);
-         // Ici, la logique de mise à jour des bonus devient plus complexe car il faudrait déséquiper
-         // l'ancien objet si la slot est unique. Pour l'instant, nous faisons confiance au front.
+    } catch (\LogicException $e) {
+        // Si c'est un consommable
+        return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 400);
     }
-
-    $em->flush();
-
-    // 2. RENVOI DES STATS MISES À JOUR
+    
+    // Le service a déjà fait le flush(), on renvoie les stats mises à jour.
     return new JsonResponse([
         'status' => 'success',
-        'isEquipped' => $playerItem->isIsEquipped(),
-        'newAttack' => $player->getAttack() + ($player->getEquippedAttackBonus() ?? 0),
-        'newDefense' => $player->getDefense() + ($player->getEquippedDefenseBonus() ?? 0),
+       'isEquipped' => $playerItem->isIsEquipped(),
+        'newAttack' => $player->calculateTotalAttack(), // <-- Appel sans $em
+        'newDefense' => $player->calculateTotalDefense(), // <-- Appel sans $em
     ]);
 }
 

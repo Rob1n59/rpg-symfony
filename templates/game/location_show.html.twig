@@ -22,28 +22,34 @@
             {% elseif classFileName == 'archer' %}{% set classFileName = 'archer' %}{% endif %}
             <img src="{{ asset('images/classes/' ~ classFileName ~ '.png') }}" alt="Portrait du {{ player.playerClassName }}" class="player-portrait">
             <div class="player-info">
-             <p><strong>Niveau:</strong> {{ player.level }}</p>
+                <p><strong>Niveau:</strong> {{ player.level }}</p>
     
                 <p class="hp-text"><strong>HP:</strong> {{ player.hp }} / {{ player.hpMax }}</p>
                 <div class="hp-bar-container">
                 {% set hpPercentage = (player.hp / player.hpMax) * 100 %}
                 <div class="hp-bar-fill" style="width: {{ hpPercentage }}%;"></div>
-             </div>
+            </div>
                 <p id="player-attack-stat">
-                <strong>Attaque:</strong> {{ player.attack + player.equippedAttackBonus|default(0) }}
+                {# Utilisation des méthodes de l'Entité Player pour le calcul total #}
+                <strong>Attaque:</strong> {{ player.calculateTotalAttack() }}
                 </p>
     
                 <p id="player-defense-stat">
-                   <strong>Défense:</strong> {{ player.defense + player.equippedDefenseBonus|default(0) }}
+                    <strong>Défense:</strong> {{ player.calculateTotalDefense() }}
                 </p>
     
                 <p><strong>Or:</strong> <span id="player-gold-value">{{ player.gold }}</span></p> 
                 <p><strong>XP:</strong> {{ player.experience }}</p>
     
-
-                <a href="{{ path('game_inventory') }}" id="inventory-button" class="action-button inventory-action-btn">Inventaire</a>
-             </div>
+                {# CORRECTION: href remplacé par # et l'URL réelle est dans un data-attribute #}
+                <a href="#" 
+                   id="inventory-button" 
+                   class="action-button inventory-action-btn"
+                   data-inventory-url="{{ path('game_inventory') }}">
+                    Inventaire
+                </a>
             </div>
+        </div>
 
         {# Zone de jeu principale (image de la scène utilisant l'ID du lieu) #}
         <div class="main-game-area" style="background-image: url('{{ asset('images/location_scenes/' ~ location.id ~ '.png') }}');"></div>
@@ -105,7 +111,7 @@
     <button id="equip-button" class="action-button small-btn js-equip-item" data-player-item-id="0">Équiper</button>
 </div>
     
-  {# FENÊTRE MODALE D'INVENTAIRE (C'est le grand overlay) #}
+{# FENÊTRE MODALE D'INVENTAIRE (C'est le grand overlay) #}
 <div id="inventory-modal" class="modal-overlay hidden">
     {# NOUS AJOUTONS UN CONTENEUR INTÉRIEUR POUR LE CONTENU AJAX #}
     <div id="inventory-ajax-content">
@@ -117,212 +123,277 @@
     {{ parent() }}
     <script>
         // *******************************************************************
-        // DECLARATION DE LA FONCTION POUR LE TOOLTIP ET L'EQUIPEMENT
+        // DECLARATION DE LA FONCTION POUR LE TOOLTIP
+        // Cette fonction est appelée après chaque chargement AJAX de l'inventaire.
         // *******************************************************************
-  function attachInventoryListeners() {
-    const itemTooltip = document.getElementById('item-tooltip');
-    const equipButton = document.getElementById('equip-button');
-    const inventorySlots = document.querySelectorAll('.js-item-slot');
-    
-    // Déclaration du timer pour la fermeture différée
-    let hideTooltipTimeout;
-    const TOOLTIP_DELAY = 150; // Délai de grâce pour traverser l'espace entre le slot et le tooltip
-    
-    // Éléments du panneau de stats principal
-    const playerAttackStat = document.getElementById('player-attack-stat'); 
-    const playerDefenseStat = document.getElementById('player-defense-stat');
-
-    if (!itemTooltip || !playerAttackStat || !playerDefenseStat) {
-        console.error("Erreur: Éléments critiques (Tooltip ou Stats) manquent.");
-        return; 
-    }
-
-    // Fonction pour afficher/déplacer le tooltip
-    const showTooltip = (e, slot) => {
-        // 1. Annuler la fermeture si elle était en attente (pour un mouvement rapide)
-        clearTimeout(hideTooltipTimeout); 
-
-        // Remplissage du contenu
-        document.getElementById('tooltip-name').textContent = slot.dataset.name;
-        document.getElementById('tooltip-description').textContent = slot.dataset.desc;
-        document.getElementById('tooltip-attack').textContent = slot.dataset.atk;
-        document.getElementById('tooltip-defense').textContent = slot.dataset.def;
+    function attachInventoryListeners() {
+        const itemTooltip = document.getElementById('item-tooltip');
+        const equipButton = document.getElementById('equip-button');
+        // Doit cibler les slots dans la modale rechargée
+        const inventorySlots = document.querySelectorAll('#inventory-ajax-content .js-item-slot');
         
-        // Mise à jour du bouton Équiper/Déséquiper
-        const isEquipped = slot.dataset.equipped === 'true';
-        equipButton.textContent = isEquipped ? 'Déséquiper' : 'Équiper';
-        equipButton.dataset.playerItemId = slot.dataset.id;
+        // Déclaration du timer pour la fermeture différée
+        let hideTooltipTimeout;
+        const TOOLTIP_DELAY = 150; 
         
-        // Affichage et positionnement
-        itemTooltip.style.left = `${e.clientX + 15}px`;
-        itemTooltip.style.top = `${e.clientY - itemTooltip.offsetHeight / 2}px`;
-        itemTooltip.classList.add('visible');
-        itemTooltip.classList.remove('hidden');
-    };
+        // Éléments du panneau de stats principal
+        const playerAttackStat = document.getElementById('player-attack-stat'); 
+        const playerDefenseStat = document.getElementById('player-defense-stat');
 
-    // Fonction pour masquer le tooltip (lancée par timer)
-    const startHideTooltipTimer = () => {
-        hideTooltipTimeout = setTimeout(() => {
-            itemTooltip.classList.add('hidden');
-            itemTooltip.classList.remove('visible');
-        }, TOOLTIP_DELAY); 
-    };
+        if (!itemTooltip || !playerAttackStat || !playerDefenseStat) {
+            console.error("Erreur: Éléments critiques (Tooltip ou Stats) manquent.");
+            return; 
+        }
 
-    // --- 1. ÉCOUTEURS sur les slots d'inventaire ---
-    inventorySlots.forEach(slot => {
-        const itemId = slot.dataset.id;
-        if (!itemId) return; // Ignore les slots vides
+        // Fonction pour afficher/déplacer le tooltip
+        const showTooltip = (e, slot) => {
+            clearTimeout(hideTooltipTimeout); 
 
-        slot.addEventListener('mouseover', (e) => {
-            showTooltip(e, slot);
-        });
-
-        // MOUSELEAVE: Démarrer la fermeture différée
-        slot.addEventListener('mouseleave', () => {
-            startHideTooltipTimer(); 
-        });
-    });
-
-    // --- 2. ÉCOUTEURS sur l'infobulle elle-même (gestion du maintien) ---
-
-    // MOUSEOVER sur le Tooltip: Empêche la disparition lorsque la souris y entre
-    itemTooltip.addEventListener('mouseover', () => {
-        clearTimeout(hideTooltipTimeout); // Annule le timer de fermeture
-    });
-
-    // MOUSELEAVE sur le Tooltip: Masque immédiatement lorsque la souris quitte la zone du tooltip
-    itemTooltip.addEventListener('mouseleave', () => {
-        itemTooltip.classList.add('hidden');
-        itemTooltip.classList.remove('visible');
-    });
-
-
-    // --- 3. GESTION DE L'ÉQUIPEMENT (AJAX) ---
-    if (equipButton) {
-        equipButton.addEventListener('click', function() {
-            const playerItemId = this.dataset.playerItemId;
-            const action = this.textContent === 'Déséquiper' ? 'unequip' : 'equip';
-            const url = `/game/equip_item/${playerItemId}/${action}`;
+            // Remplissage du contenu
+            document.getElementById('tooltip-name').textContent = slot.dataset.name;
+            document.getElementById('tooltip-description').textContent = slot.dataset.desc;
+            document.getElementById('tooltip-attack').textContent = slot.dataset.atk;
+            document.getElementById('tooltip-defense').textContent = slot.dataset.def;
             
-            // Masque l'infobulle avant d'envoyer la requête
-            itemTooltip.classList.add('hidden');
+            // Mise à jour du bouton Équiper/Déséquiper
+            const isEquipped = slot.dataset.equipped === 'true';
+            equipButton.textContent = isEquipped ? 'Déséquiper' : 'Équiper';
+            equipButton.dataset.playerItemId = slot.dataset.id;
+            
+            // Affichage et positionnement
+            itemTooltip.style.left = `${e.clientX + 15}px`;
+            itemTooltip.style.top = `${e.clientY - itemTooltip.offsetHeight / 2}px`;
+            itemTooltip.classList.add('visible');
+            itemTooltip.classList.remove('hidden');
+        };
 
-            fetch(url, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // 1. Mise à jour des statistiques totales du joueur
-                    playerAttackStat.innerHTML = `<strong>Attaque:</strong> ${data.newAttack}`;
-                    playerDefenseStat.innerHTML = `<strong>Défense:</strong> ${data.newDefense}`;
-                    
-                    // 2. Recharge la page pour voir le tag ÉQUIPÉ mis à jour
-                    window.location.reload(); 
-                } else {
-                    console.error("Erreur d'équipement:", data.message);
-                }
+        // Fonction pour masquer le tooltip (lancée par timer)
+        const startHideTooltipTimer = () => {
+            hideTooltipTimeout = setTimeout(() => {
+                itemTooltip.classList.add('hidden');
+                itemTooltip.classList.remove('visible');
+            }, TOOLTIP_DELAY); 
+        };
+
+        // --- 1. ÉCOUTEURS sur les slots d'inventaire ---
+        inventorySlots.forEach(slot => {
+            const itemId = slot.dataset.id;
+            if (!itemId) return; 
+
+            slot.addEventListener('mouseover', (e) => {
+                showTooltip(e, slot);
+            });
+
+            slot.addEventListener('mouseleave', () => {
+                startHideTooltipTimer(); 
             });
         });
-    }
-}
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const logsContent = document.querySelector('.game-logs-panel .logs-content');
-            
-            const inventoryButton = document.getElementById('inventory-button');
-            const inventoryModal = document.getElementById('inventory-modal');
-            const inventoryAjaxContent = document.getElementById('inventory-ajax-content'); 
-            const actionButtonsContainer = document.querySelector('.js-action-list'); 
 
-            function scrollToBottom() {
-                if (logsContent) {
-                    logsContent.scrollTop = logsContent.scrollHeight;
-                }
-            }
-            scrollToBottom();
-
-            if (inventoryButton && inventoryModal && inventoryAjaxContent) {
-                inventoryButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    
-                    if (inventoryModal.classList.contains('hidden') || inventoryAjaxContent.innerHTML.trim() === "") { 
-                        const url = inventoryButton.href; 
-                        
-                        inventoryAjaxContent.innerHTML = '<div style="text-align:center; padding: 50px;">Chargement de l\'inventaire...</div>';
-                        inventoryModal.classList.remove('hidden');
-
-                        fetch(url, { method: 'GET' })
-                            .then(response => {
-                                if (!response.ok) { throw new Error('Erreur de chargement: ' + response.statusText); }
-                                return response.text(); 
-                            })
-                            .then(html => {
-                                
-                                inventoryAjaxContent.innerHTML = html;
-                                
-                                const closeButton = document.getElementById('close-inventory-button');
-                                if (closeButton) {
-                                    closeButton.addEventListener('click', () => {
-                                        inventoryModal.classList.add('hidden');
-                                    });
-                                }
-                                attachInventoryListeners(); 
-                            })
-                            .catch(error => {
-                                console.error('Erreur de chargement de l\'inventaire:', error);
-                                inventoryAjaxContent.innerHTML = '<div style="color: red; padding: 20px;">Erreur lors du chargement.</div>';
-                            });
-                            
-                    } else {
-                        inventoryModal.classList.remove('hidden');
-                    }
-                });
-                
-                inventoryModal.addEventListener('click', (e) => {
-                    if (e.target === inventoryModal) {
-                        inventoryModal.classList.add('hidden');
-                    }
-                });
-            }
-
-            if (actionButtonsContainer) {
-                actionButtonsContainer.addEventListener('click', function(e) {
-                    const target = e.target.closest('a[data-option-id]');
-                    
-                    if (target && target.dataset.optionId == 102) { 
-                        e.preventDefault(); 
-                        
-                        fetch(target.href, { method: 'GET' }) 
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                
-                                const goldElement = document.getElementById('player-gold-value'); 
-                                if (goldElement) {
-                                    goldElement.textContent = data.playerStats.gold; 
-                                }
-
-                                if (logsContent) {
-                                    logsContent.innerHTML += `<p class="log-entry alert-${data.flashType}">${data.message}</p>`;
-                                    scrollToBottom();
-                                }
-                                
-                                if (inventoryAjaxContent) {
-                                    inventoryAjaxContent.innerHTML = ''; 
-                                }
-
-                            } else {
-                                
-                                if (logsContent) {
-                                     logsContent.innerHTML += `<p class="log-entry alert-danger">Action échouée.</p>`;
-                                     scrollToBottom();
-                                }
-                            }
-                        })
-                        .catch(error => console.error('Erreur AJAX pour l\'action 102:', error));
-                    }
-                    
-                });
-            }
+        // --- 2. ÉCOUTEURS sur l'infobulle elle-même (gestion du maintien) ---
+        itemTooltip.addEventListener('mouseover', () => {
+            clearTimeout(hideTooltipTimeout); 
         });
+
+        itemTooltip.addEventListener('mouseleave', () => {
+            itemTooltip.classList.add('hidden');
+            itemTooltip.classList.remove('visible');
+        });
+    }
+        
+    // *******************************************************************
+    // GESTIONNAIRE D'ÉVÉNEMENTS PRINCIPAL (Utilise la délégation pour les éléments dynamiques)
+    // *******************************************************************
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const logsContent = document.querySelector('.game-logs-panel .logs-content');
+        
+        const inventoryButton = document.getElementById('inventory-button');
+        const inventoryModal = document.getElementById('inventory-modal');
+        const inventoryAjaxContent = document.getElementById('inventory-ajax-content'); 
+        const actionButtonsContainer = document.querySelector('.js-action-list'); 
+
+        // Références pour la Délégation d'Événements
+        const itemTooltip = document.getElementById('item-tooltip');
+        const playerAttackStat = document.getElementById('player-attack-stat'); 
+        const playerDefenseStat = document.getElementById('player-defense-stat');
+
+
+        function scrollToBottom() {
+            if (logsContent) {
+                logsContent.scrollTop = logsContent.scrollHeight;
+            }
+        }
+        scrollToBottom();
+
+        // --- GESTION DE L'OUVERTURE DE L'INVENTAIRE (SÉCURISÉE) ---
+        if (inventoryButton && inventoryModal && inventoryAjaxContent) {
+            inventoryButton.addEventListener('click', (e) => {
+                e.preventDefault(); // TRÈS IMPORTANT: Intercepte le clic et empêche la navigation
+                
+                // Si la modale est cachée OU si le contenu n'a pas encore été chargé
+                if (inventoryModal.classList.contains('hidden') || inventoryAjaxContent.innerHTML.trim() === "") { 
+                    
+                    const url = inventoryButton.dataset.inventoryUrl; // Utilisation du data-attribute
+                    
+                    inventoryAjaxContent.innerHTML = '<div style="text-align:center; padding: 50px;">Chargement de l\'inventaire...</div>';
+                    inventoryModal.classList.remove('hidden');
+
+                    fetch(url, { method: 'GET' })
+                        .then(response => {
+                            if (!response.ok) { 
+                                throw new Error('Erreur de chargement: ' + response.statusText); 
+                            }
+                            return response.text(); 
+                        })
+                        .then(html => {
+                            inventoryAjaxContent.innerHTML = html;
+                            
+                            const closeButton = document.getElementById('close-inventory-button');
+                            if (closeButton) {
+                                closeButton.addEventListener('click', () => {
+                                    inventoryModal.classList.add('hidden');
+                                    itemTooltip.classList.add('hidden'); // S'assurer que le tooltip est masqué
+                                });
+                            }
+                            // ATTENTION: Appelle attachInventoryListeners pour lier les événements 
+                            // aux NOUVEAUX éléments chargés par AJAX (slots, boutons d'équipement)
+                            attachInventoryListeners(); 
+                        })
+                        .catch(error => {
+                            console.error('Erreur de chargement de l\'inventaire:', error);
+                            inventoryAjaxContent.innerHTML = '<div style="color: red; padding: 20px;">Erreur lors du chargement.</div>';
+                        });
+                        
+                } else {
+                    // Si le contenu est déjà chargé, affiche simplement la modale
+                    inventoryModal.classList.remove('hidden');
+                }
+            });
+            
+            // Fermeture en cliquant en dehors de la fenêtre
+            inventoryModal.addEventListener('click', (e) => {
+                if (e.target === inventoryModal) {
+                    inventoryModal.classList.add('hidden');
+                    itemTooltip.classList.add('hidden'); // S'assurer que le tooltip est masqué
+                }
+            });
+        }
+        
+        // --- GESTION DE L'ÉQUIPEMENT (DELEGATION D'ÉVÉNEMENTS) ---
+        // L'écouteur est placé sur l'élément parent STATIQUE (le body) 
+        // et cible uniquement le bouton "equip-button" (ID statique du tooltip).
+        document.body.addEventListener('click', function(e) {
+            const equipButton = e.target.closest('#equip-button');
+
+            if (equipButton) {
+                // Empêcher l'action par défaut du bouton (même si c'est un <button>, bonne pratique)
+                e.preventDefault(); 
+                
+                const playerItemId = equipButton.dataset.playerItemId;
+                
+                // CORRECTION: Utilisation de Twig pour la route, sans la variable {action}
+                const url = `{{ path('game_equip_item', {'playerItemId': 'PLAYER_ITEM_ID'}) }}`.replace('PLAYER_ITEM_ID', playerItemId);
+                
+                itemTooltip.classList.add('hidden'); // Masquer le tooltip
+
+                fetch(url, { method: 'POST' })
+                .then(response => {
+                    // Si la réponse n'est pas OK, on essaie de récupérer le texte pour le débogage.
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text || 'Réponse non valide du serveur.'); });
+                    }
+                    return response.json(); 
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        
+                        // 1. Mise à jour des statistiques totales du joueur
+                        playerAttackStat.innerHTML = `<strong>Attaque:</strong> ${data.newAttack}`;
+                        playerDefenseStat.innerHTML = `<strong>Défense:</strong> ${data.newDefense}`;
+                        
+                        // 2. LOGIQUE CRITIQUE : Afficher le message dans les logs
+                        const isEquipped = data.isEquipped;
+                        
+                        let itemName = document.getElementById('tooltip-name').textContent; 
+                        let actionMessage = isEquipped ? ` a été équipé.` : ` a été déséquipé.`;
+                        
+                        if (logsContent) {
+                            logsContent.innerHTML += `<p class="log-entry alert-success">L'objet <span class="highlight-item">${itemName}</span>${actionMessage}</p>`;
+                            scrollToBottom(); 
+                        }
+
+                        // 3. MISE À JOUR VISUELLE DE L'INVENTAIRE (Rechargement AJAX de la modale)
+                        const urlInventory = inventoryButton.dataset.inventoryUrl; 
+                        
+                        fetch(urlInventory, { method: 'GET' })
+                        .then(response => response.text())
+                        .then(html => {
+                            inventoryAjaxContent.innerHTML = html;
+                            // TRÈS IMPORTANT: Réattacher les écouteurs pour les nouveaux slots (Tooltip/Hover)
+                            attachInventoryListeners(); 
+                        });
+                        
+                    } else {
+                        console.error("Erreur d'équipement:", data.message);
+                        if (logsContent) {
+                            logsContent.innerHTML += `<p class="log-entry alert-warning">Erreur : ${data.message}</p>`;
+                            scrollToBottom();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur d'équipement AJAX:", error);
+                    if (logsContent) {
+                        logsContent.innerHTML += `<p class="log-entry alert-danger">Échec de l'équipement (Erreur réseau/JSON).</p>`;
+                        scrollToBottom();
+                    }
+                });
+            }
+        }); // Fin de la Délégation d'Événements pour l'équipement
+
+        // --- GESTION DE L'ACTION 102 (LOOT) ---
+        if (actionButtonsContainer) {
+            actionButtonsContainer.addEventListener('click', function(e) {
+                const target = e.target.closest('a[data-option-id]');
+                
+                if (target && target.dataset.optionId == 102) { 
+                    e.preventDefault(); 
+                    
+                    fetch(target.href, { method: 'GET' }) 
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            
+                            const goldElement = document.getElementById('player-gold-value'); 
+                            if (goldElement) {
+                                goldElement.textContent = data.playerStats.gold; 
+                            }
+                            // Mise à jour des stats ATK/DEF après loot
+                            document.getElementById('player-attack-stat').innerHTML = `<strong>Attaque:</strong> ${data.playerStats.attack}`;
+                            document.getElementById('player-defense-stat').innerHTML = `<strong>Défense:</strong> ${data.playerStats.defense}`;
+
+                            if (logsContent) {
+                                logsContent.innerHTML += `<p class="log-entry alert-${data.flashType}">${data.message}</p>`;
+                                scrollToBottom();
+                            }
+                            
+                            // Efface le contenu de l'inventaire pour forcer un rechargement AJAX (car un objet a peut-être été looté)
+                            if (inventoryAjaxContent) {
+                                inventoryAjaxContent.innerHTML = ''; 
+                            }
+
+                        } else {
+                            if (logsContent) {
+                                logsContent.innerHTML += `<p class="log-entry alert-danger">Action échouée.</p>`;
+                                scrollToBottom();
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Erreur AJAX pour l\'action 102:', error));
+                }
+                
+            });
+        }
+    });
     </script>
 {% endblock %}

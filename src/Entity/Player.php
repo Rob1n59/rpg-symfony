@@ -6,7 +6,8 @@ use App\Repository\PlayerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\EntityManagerInterface; // IMPORTANT: Ajout pour le calcul des stats via BDD
+// IMPORTANT: Suppression de l'import de l'EntityManager, car l'Entité ne doit pas en dépendre.
+// use Doctrine\ORM\EntityManagerInterface; 
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 class Player
@@ -31,7 +32,7 @@ class Player
     #[ORM\Column]
     private ?int $defense = null;
 
-    // Bonus d'attaque et de défense provenant de l'équipement (mis à jour par le contrôleur)
+    // Bonus d'attaque et de défense provenant de l'équipement (mis à jour par le service)
     #[ORM\Column(nullable: true)]
     private ?int $equippedAttackBonus = 0; 
     
@@ -65,31 +66,29 @@ class Player
         $this->playerItems = new ArrayCollection();
     }
     
-    // --- NOUVELLES MÉTHODES DE CALCUL DES STATS TOTALES ---
+    // --- MÉTHODES DE CALCUL DES STATS TOTALES CORRIGÉES ---
 
     /**
-     * Calcule l'Attaque totale (Base + Bonus Equipés).
-     * @param EntityManagerInterface $em L'EntityManager est nécessaire pour l'injection via service/contrôleur.
+     * Calcule l'Attaque totale (Base + Bonus Equipés) sans dépendre de l'EntityManager.
      */
-    public function calculateTotalAttack(EntityManagerInterface $em): int
+    public function calculateTotalAttack(): int
     {
-        // On retourne l'attaque de base PLUS le bonus qui est géré et persisté par le contrôleur.
+        // On retourne l'attaque de base PLUS le bonus qui est géré et persisté par le InventoryService.
         return ($this->attack ?? 0) + ($this->equippedAttackBonus ?? 0);
     }
 
     /**
-     * Calcule la Défense totale (Base + Bonus Equipés).
-     * @param EntityManagerInterface $em L'EntityManager est nécessaire pour l'injection via service/contrôleur.
+     * Calcule la Défense totale (Base + Bonus Equipés) sans dépendre de l'EntityManager.
      */
-    public function calculateTotalDefense(EntityManagerInterface $em): int
+    public function calculateTotalDefense(): int
     {
-        // On retourne la défense de base PLUS le bonus qui est géré et persisté par le contrôleur.
+        // On retourne la défense de base PLUS le bonus qui est géré et persisté par le InventoryService.
         return ($this->defense ?? 0) + ($this->equippedDefenseBonus ?? 0);
     }
     
     // --- FIN DES MÉTHODES DE CALCUL ---
     
-    // ... (Reste des getters et setters, qui sont inchangés) ...
+    // --- GETTERS & SETTERS ---
 
     public function getId(): ?int
     {
