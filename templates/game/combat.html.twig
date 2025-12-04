@@ -1,0 +1,184 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Combat: {{ enemy.name }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {# Nous utiliserons une feuille de style "combat.css" pour l'affichage des barres de vie #}
+    <link rel="stylesheet" href="{{ asset('css/combat.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="combat-container">
+        <h1>Bataille contre le {{ enemy.name }}</h1>
+
+        <div class="combat-area">
+            
+            {# Zone de l'Ennemi #}
+            <div class="combat-entity enemy-area">
+                <h2>{{ enemy.name }}</h2>
+                <img src="{{ asset('images/enemies/' ~ enemy.name|lower ~ '.png') }}" alt="{{ enemy.name }}" class="entity-portrait">
+                
+                {# Barre de Vie de l'Ennemi #}
+                <p class="hp-text">PV: <span id="enemy-hp-value">{{ enemy.hp }}</span> / {{ enemy.hpMax }}</p>
+                <div class="hp-bar-container enemy-hp-bar">
+                    {% set enemyHpPercentage = (enemy.hp / enemy.hpMax) * 100 %}
+                    <div id="enemy-hp-fill" class="hp-bar-fill" style="width: {{ enemyHpPercentage }}%;"></div>
+                </div>
+
+                <div class="stats-detail">
+                    <p>Attaque: {{ enemy.attack }}</p>
+                    <p>Défense: {{ enemy.defense }}</p>
+                </div>
+            </div>
+
+            {# Zone du Joueur #}
+            <div class="combat-entity player-area">
+                <h2>{{ player.name }}</h2>
+                
+                {% set classFileName = player.playerClassName|lower %}
+                {% if classFileName == 'guerrier' %}{% set classFileName = 'warrior' %}
+                {% elseif classFileName == 'mage' %}{% set classFileName = 'mage' %}
+                {% elseif classFileName == 'archer' %}{% set classFileName = 'archer' %}{% endif %}
+                <img src="{{ asset('images/classes/' ~ classFileName ~ '.png') }}" alt="{{ player.playerClassName }}" class="entity-portrait">
+                
+                {# Barre de Vie du Joueur #}
+                <p class="hp-text">PV: <span id="player-hp-value">{{ player.hp }}</span> / {{ player.hpMax }}</p>
+                <div class="hp-bar-container player-hp-bar">
+                    {% set playerHpPercentage = (player.hp / player.hpMax) * 100 %}
+                    <div id="player-hp-fill" class="hp-bar-fill" style="width: {{ playerHpPercentage }}%;"></div>
+                </div>
+
+                <div class="stats-detail">
+                    {# Utilisation des stats totales pour afficher la puissance réelle #}
+                    <p>Attaque: <span id="player-attack-stat">{{ player.calculateTotalAttack() }}</span></p>
+                    <p>Défense: <span id="player-defense-stat">{{ player.calculateTotalDefense() }}</span></p>
+                </div>
+            </div>
+        </div>
+
+        {# Zone des Actions et des Logs #}
+        <div class="combat-interface">
+            <div class="action-buttons">
+                {# Le bouton "Attaquer" va déclencher la requête AJAX #}
+                <button id="attack-button" class="action-button attack-action-btn">Attaquer</button>
+                {# Le bouton "Fuir" redirigera vers une route gérée par le contrôleur #}
+                <a href="{{ path('combat_flee') }}" id="flee-button" class="action-button flee-action-btn">Fuir</a>
+            </div>
+
+            <div class="combat-logs-panel">
+                <h3>Journal de Combat</h3>
+                <div id="combat-logs" class="logs-content">
+                    <p class="log-entry">Le combat contre le {{ enemy.name }} commence !</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const attackButton = document.getElementById('attack-button');
+            const logsContainer = document.getElementById('combat-logs');
+            
+            // Éléments PV
+            const enemyHpValue = document.getElementById('enemy-hp-value');
+            const enemyHpFill = document.getElementById('enemy-hp-fill');
+            const playerHpValue = document.getElementById('player-hp-value');
+            const playerHpFill = document.getElementById('player-hp-fill');
+            
+            const enemyMaxHp = {{ enemy.hpMax }}; // Max PV de l'ennemi (statique ici)
+            const playerMaxHp = {{ player.hpMax }}; // Max PV du joueur (statique ici)
+
+            // Assure le défilement vers le bas des logs
+            function scrollToBottom() {
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
+
+            // Met à jour la barre de vie et le texte pour l'entité donnée
+            function updateHpDisplay(entity, currentHp, maxHp, hpValueElement, hpFillElement) {
+                const percentage = (currentHp / maxHp) * 100;
+                hpValueElement.textContent = currentHp;
+                hpFillElement.style.width = `${percentage}%`;
+                
+                // Optionnel : Changer la couleur si les PV sont bas
+                if (percentage < 25) {
+                    hpFillElement.style.backgroundColor = 'red';
+                } else if (percentage < 50) {
+                    hpFillElement.style.backgroundColor = 'orange';
+                } else {
+                    hpFillElement.style.backgroundColor = 'green';
+                }
+            }
+
+            // Gère le clic sur le bouton Attaquer
+            if (attackButton) {
+                attackButton.addEventListener('click', function() {
+                    // Désactiver le bouton pendant le traitement pour éviter le spam
+                    attackButton.disabled = true;
+
+                    // Envoi de la requête AJAX pour effectuer un tour de combat
+                    fetch('{{ path("combat_attack") }}', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        
+                        // Ajout de l'entrée dans le log
+                        function addLogEntry(message, type = 'info') {
+                            logsContainer.innerHTML += `<p class="log-entry log-${type}">${message}</p>`;
+                            scrollToBottom();
+                        }
+                        
+                        // --- Logique d'affichage des dégâts ---
+                        
+                        if (data.status === 'ongoing') {
+                            // 1. Mise à jour de l'ennemi
+                            updateHpDisplay('enemy', data.enemyHp, enemyMaxHp, enemyHpValue, enemyHpFill);
+                            addLogEntry(`Vous infligez <span class="damage-dealt">${data.damageDealt}</span> dégâts au ${data.enemyName}.`);
+                            
+                            // 2. Mise à jour du joueur
+                            updateHpDisplay('player', data.playerHp, playerMaxHp, playerHpValue, playerHpFill);
+                            addLogEntry(`Le ${data.enemyName} vous inflige <span class="damage-taken">${data.damageTaken}</span> dégâts !`);
+                            
+                            // Réactiver le bouton pour le tour suivant
+                            attackButton.disabled = false;
+                            
+                        } else if (data.status === 'victory') {
+                            // Ennemi vaincu
+                            updateHpDisplay('enemy', 0, enemyMaxHp, enemyHpValue, enemyHpFill);
+                            addLogEntry(`VICTOIRE ! Vous avez vaincu le ${data.enemyName}.`, 'success');
+                            addLogEntry(`Vous gagnez ${data.xpGained} XP et ${data.goldGained} Or.`, 'success');
+                            
+                            // Rediriger vers la page de résultat après un court délai
+                            setTimeout(() => {
+                                window.location.href = data.redirectUrl;
+                            }, 2000); 
+                            
+                        } else if (data.status === 'defeat') {
+                            // Joueur vaincu
+                            updateHpDisplay('player', 0, playerMaxHp, playerHpValue, playerHpFill);
+                            addLogEntry(`DÉFAITE... Le ${data.enemyName} vous a vaincu.`, 'defeat');
+                            
+                            // Rediriger vers la page de résultat après un court délai
+                            setTimeout(() => {
+                                window.location.href = data.redirectUrl;
+                            }, 2000);
+                        } else {
+                            addLogEntry('Erreur de combat : ' + data.message, 'error');
+                            attackButton.disabled = false;
+                        }
+
+                    })
+                    .catch(error => {
+                        console.error('Erreur AJAX de combat:', error);
+                        logsContainer.innerHTML += '<p class="log-entry log-error">Erreur de communication avec le serveur.</p>';
+                        scrollToBottom();
+                        attackButton.disabled = false;
+                    });
+                });
+            }
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rencontre: {{ enemy.name }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {# Assurez-vous d'avoir ce fichier CSS pour le style #}
+    <link rel="stylesheet" href="{{ asset('css/encounter_choice.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="encounter-container">
+        <div class="encounter-panel">
+            <h1>Un {{ enemy.name }} apparaît !</h1>
+            
+            <div class="enemy-details">
+                <img src="{{ asset('images/enemies/' ~ enemy.name|lower ~ '.png') }}" alt="{{ enemy.name }}" class="enemy-portrait">
+                
+                <p class="enemy-stats">
+                    <strong>PV:</strong> {{ enemy.hp }} <br>
+                    <strong>Attaque:</strong> {{ enemy.attack }} <br>
+                    <strong>Défense:</strong> {{ enemy.defense }} <br>
+                    <strong>Récompense (XP/Or):</strong> {{ enemy.xpReward }} XP / {{ enemy.goldReward }} Or
+                </p>
+                <p class="description">{{ enemy.description }}</p>
+            </div>
+            
+            <h2>Que faites-vous ?</h2>
+            
+            <div class="action-buttons">
+                {# Bouton ATTAQUER: Redirige vers la route du CombatController pour l'affichage de l'arène #}
+                <a href="{{ path('combat_start') }}" class="action-button attack-button">
+                    Attaquer ! ⚔️
+                </a>
+                
+                {# Bouton FUIR: Redirige vers la route de fuite gérée par le CombatController #}
+                <a href="{{ path('combat_flee') }}" class="action-button flee-button">
+                    Fuir 🏃
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

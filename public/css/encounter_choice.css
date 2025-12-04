@@ -1,0 +1,188 @@
+/* Style de la page de choix de rencontre (encounter_choice.html.twig) */
+
+body {
+    /* Utilise le fond sombre du jeu pour la cohérence */
+    background-color: #2b1d14; 
+    color: #e0c8a8;
+    font-family: "Georgia", serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    /* IMPORTANT: Le body doit permettre au background fixe de s'afficher correctement */
+    position: relative; 
+    z-index: 0;
+    
+    /* CORRECTION : Règle qui pourrait causer le bleu (si le fond est appliqué au body) */
+    /* Assurez-vous qu'aucune couleur forte n'est définie ici */
+}
+
+/* ... (Reste du fichier inchangé) ... */
+
+/* --- CLASSE CRITIQUE POUR L'IMAGE DE FOND DU LIEU --- */
+.game-page-background {
+    /* ... (règles déjà fournies, assurant le z-index: -1) ... */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; 
+    
+    /* CORRECTION LÉGÈRE : Assombrir davantage l'image pour neutraliser les couleurs de fond */
+    filter: blur(5px) brightness(0.8); /* Ajout de brightness pour assombrir légèrement */
+    opacity: 0.7; 
+    transform: scale(1.02);
+}
+
+
+.encounter-container {
+    width: 90%;
+    max-width: 650px;
+    padding: 30px;
+    /* Fond pour le panneau de rencontre, pour contraster avec l'image floutée */
+    background-color: rgba(61, 44, 32, 0.5); /* Correspond à #3d2c20 avec 85% d'opacité */
+    border: 3px solid #6b4e2a; 
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+    text-align: center;
+    box-sizing: border-box;
+    /* Positionné au-dessus du fond, mais au centre */
+    position: relative; 
+    z-index: 10; 
+}
+
+h1 {
+    color: #FFD700; 
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    border-bottom: 2px solid #6b4e2a; 
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+    font-size: 2em;
+}
+
+h2 {
+    color: #FFD700;
+    margin-top: 30px;
+    font-size: 1.5em;
+}
+
+.enemy-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #4a3a2b; 
+    border-radius: 8px;
+    border: 1px solid #7b5b3a;
+}
+
+.enemy-portrait {
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    border: 4px solid #FFD700; 
+    object-fit: cover;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.enemy-portrait img {
+    /* Garantit que l'image prend 100% de la taille du conteneur (80x80px) */
+    width: 100%;
+    height: 100%;
+    /* Recadre l'image pour qu'elle remplisse le conteneur sans déformation */
+    object-fit: cover; 
+}
+
+.enemy-stats {
+    text-align: left; 
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 1em;
+    width: 80%; 
+    box-sizing: border-box;
+    color: #e0c8a8; 
+    background-color: #1a1008; 
+    border: 1px solid #4a3a2b;
+}
+
+.description {
+    font-style: italic;
+    color: #c0b098;
+    margin-top: 10px;
+}
+
+/* --- Style des Boutons d'Action --- */
+.action-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+}
+
+.action-button {
+    display: inline-block;
+    width: 45%;
+    padding: 15px 10px;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 1.1em;
+    
+    background-color: #5a3d20;
+    border: 1px solid #4a3a2b;
+    color: #e0c8a8;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.attack-button {
+    background-color: #c0392b; 
+    box-shadow: 0 4px 0 #922b21;
+    color: white; 
+}
+
+.attack-button:hover {
+    background-color: #e74c3c;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #922b21;
+}
+
+.attack-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #922b21;
+}
+
+.flee-button {
+    background-color: #3d2c20; 
+    box-shadow: 0 4px 0 #2b1d14;
+    color: #FFD700;
+}
+
+.flee-button:hover {
+    background-color: #4a3a2b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2b1d14;
+}
+
+.flee-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2b1d14;
+}
+
+.tip {
+    margin-top: 25px;
+    font-size: 0.9em;
+    color: #aaa;
+    border-top: 1px dashed #4a3a2b;
+    padding-top: 15px;
+}

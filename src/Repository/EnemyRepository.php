@@ -8,6 +8,11 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Enemy>
+ *
+ * @method Enemy|null find($id, $lockMode = null, $lockVersion = null)
+ * @method Enemy|null findOneBy(array $criteria, array $orderBy = null)
+ * @method Enemy[]    findAll()
+ * @method Enemy[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class EnemyRepository extends ServiceEntityRepository
 {
@@ -16,28 +21,44 @@ class EnemyRepository extends ServiceEntityRepository
         parent::__construct($registry, Enemy::class);
     }
 
-    //    /**
-    //     * @return Enemy[] Returns an array of Enemy objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('e.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Trouve tous les ennemis qui correspondent au niveau de danger de la zone actuelle.
+     * * @param string $dangerLevel Le niveau de danger (ex: 'Faible', 'Élevé').
+     * @return Enemy[]
+     */
+    public function findEnemiesByDangerLevel(string $dangerLevel): array
+    {
+        return $this->createQueryBuilder('e')
+            // e.dangerLevel doit être égal au niveau de danger de la zone
+            ->andWhere('e.dangerLevel = :val')
+            ->setParameter('val', $dangerLevel)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
-    //    public function findOneBySomeField($value): ?Enemy
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+//    /**
+//     * @return Enemy[] Returns an array of Enemy objects
+//     */
+//    public function findByExampleField($value): array
+//    {
+//        return $this->createQueryBuilder('e')
+//            ->andWhere('e.exampleField = :val')
+//            ->setParameter('val', $value)
+//            ->orderBy('e.id', 'ASC')
+//            ->setMaxResults(10)
+//            ->getQuery()
+//            ->getResult()
+//        ;
+//    }
+
+//    public function findOneBySomeField($value): ?Enemy
+//    {
+//        return $this->createQueryBuilder('e')
+//            ->andWhere('e.exampleField = :val')
+//            ->setParameter('val', $value)
+//            ->getQuery()
+//            ->getOneOrNullResult()
+//        ;
+//    }
 }

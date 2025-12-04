@@ -15,9 +15,18 @@ class Enemy
 
     #[ORM\Column(length: 25)]
     private ?string $name = null;
+    
+    // NOUVEAU CHAMP AJOUTÉ POUR TWIG:
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $description = null;
+    // FIN NOUVEAU CHAMP
 
     #[ORM\Column]
     private ?int $hp = null;
+    
+    // Ajout du HP Max pour la barre de vie
+    #[ORM\Column(nullable: true)]
+    private ?int $hpMax = null; 
 
     #[ORM\Column]
     private ?int $attack = null;
@@ -31,14 +40,17 @@ class Enemy
     #[ORM\Column]
     private ?int $xpReward = null;
 
-    // NOUVEAU CHAMP : Pour stocker le chemin d'une image de l'ennemi
+    // Niveau de danger pour filtrer l'apparition par zone
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $dangerLevel = null; 
+
+    // Pour stocker le chemin d'une image de l'ennemi
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image = null;
 
-    // NOUVEAU CHAMP : Relation ManyToOne vers l'entité Item pour le loot
-    // Un ennemi peut dropper un type d'objet spécifique (ou aucun si null).
+    // Relation ManyToOne vers l'entité Item pour le loot
     #[ORM\ManyToOne(targetEntity: Item::class)]
-    #[ORM\JoinColumn(nullable: true)] // L'ennemi peut ne pas dropper d'objet
+    #[ORM\JoinColumn(nullable: true)] 
     private ?Item $lootItem = null;
 
 
@@ -58,6 +70,31 @@ class Enemy
 
         return $this;
     }
+    
+    // NOUVEAU GETTER/SETTER pour description
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
+        return $this;
+    }
+    // FIN NOUVEAU GETTER/SETTER
+
+    public function getHpMax(): ?int
+    {
+        return $this->hpMax;
+    }
+
+    public function setHpMax(?int $hpMax): static
+    {
+        $this->hpMax = $hpMax;
+
+        return $this;
+    }
 
     public function getHp(): ?int
     {
@@ -70,7 +107,7 @@ class Enemy
 
         return $this;
     }
-
+    // ... (Reste des getters et setters inchangés) ...
     public function getAttack(): ?int
     {
         return $this->attack;
@@ -119,7 +156,18 @@ class Enemy
         return $this;
     }
 
-    // NOUVEAU GETTER/SETTER pour image
+    public function getDangerLevel(): ?string
+    {
+        return $this->dangerLevel;
+    }
+
+    public function setDangerLevel(?string $dangerLevel): static
+    {
+        $this->dangerLevel = $dangerLevel;
+
+        return $this;
+    }
+
     public function getImage(): ?string
     {
         return $this->image;
@@ -132,7 +180,6 @@ class Enemy
         return $this;
     }
 
-    // NOUVEAU GETTER/SETTER pour lootItem
     public function getLootItem(): ?Item
     {
         return $this->lootItem;
