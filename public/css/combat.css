@@ -1,0 +1,241 @@
+/* Style général de la page de combat */
+
+body {
+    background-color: #2b1d14; /* Fond cohérent avec le thème (marron foncé) */
+    color: #e0c8a8;
+    font-family: 'Georgia', serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    position: relative; 
+    z-index: 0;
+}
+
+/* Fond de la page (image du joueur) */
+.game-page-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; 
+    
+    background-image: var(--blurred-bg-image); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    /* CORRECTION DU FILTRE BLEU/OPACITÉ: 
+       Flou léger, désaturation (grayscale) et luminosité réduite pour neutraliser la couleur 
+       et l'opacité à 1 pour éviter la couleur du body. */
+    filter: blur(3px) grayscale(50%) brightness(0.9); 
+    opacity: 1; 
+    transform: scale(1.02);
+}
+
+.combat-container {
+    max-width: 1000px; 
+    width: 90%;
+    margin: 40px auto;
+    padding: 30px;
+    /* CORRECTION : Conteneur principal en RGBA (semi-transparent 95%) */
+    background-color: rgba(18, 10, 5, 0.95); 
+    border-radius: 10px;
+    border: 3px solid #6b4e2a; /* Bordure générale de l'interface */
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+h1 {
+    color: #FFD700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    margin-bottom: 30px;
+    border-bottom: 2px solid #6b4e2a;
+    padding-bottom: 10px;
+    font-size: 2em;
+}
+
+/* ------------------------------------------- */
+/* 1. ZONE DES COMBATTANTS (COTE À COTE) */
+/* ------------------------------------------- */
+.combat-area {
+    display: flex;
+    justify-content: center; 
+    gap: 40px; 
+    margin-bottom: 40px;
+}
+
+.combat-card {
+    width: 40%; 
+    min-width: 300px;
+    background-color: #3d2c20; /* Fond de la carte (marron clair) */
+    padding: 0; /* CORRECTION: Supprime le padding pour que l'image colle aux bords */
+    border-radius: 8px;
+    border: none; /* CORRECTION: Supprime la bordure latérale marron */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.entity-name {
+    color: #FFD700;
+    margin: 10px 0;
+    font-size: 1.4em;
+    padding-top: 10px; 
+}
+
+/* --- Portrait (Dimensons ajustées et FIT) --- */
+.portrait-box {
+    width: 100%; 
+    height: 300px; /* Grande hauteur pour le personnage entier */
+    border: none; /* Supprime la bordure interne de la boîte */
+    border-radius: 0; 
+    overflow: hidden;
+    margin-bottom: 10px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    /* Alignement parfait avec la carte */
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.combat-card.player-area .portrait-box,
+.combat-card.enemy-area .portrait-box {
+    margin: 0; 
+}
+
+
+.entity-image {
+    width: 100%;
+    height: 100%;
+    /* CORRECTION CRITIQUE: Utilisation de CONTAIN pour voir l'image EN ENTIER (pas de coupe) */
+    object-fit: contain; 
+}
+
+/* --- Bloc Stats --- */
+.stats-box {
+    width: 100%;
+    padding: 15px; /* Ajout du padding pour que les stats ne collent pas aux bords */
+    background-color: #1a1008; /* Fond sombre pour les stats */
+    border-radius: 4px;
+    border: 1px solid #4a3a2b;
+    box-sizing: border-box;
+}
+
+.hp-bar-container {
+    height: 15px;
+    background-color: #555;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 5px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.hp-bar-fill {
+    height: 100%;
+    background-color: #2ecc71; /* Vert de vie */
+    transition: width 0.5s ease-out;
+}
+
+.hp-text {
+    font-weight: bold;
+    color: #FFD700;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    text-align: left;
+    font-size: 0.9em;
+    padding: 0 10px;
+}
+.stats-grid p {
+    margin: 3px 0;
+    color: #e0c8a8;
+}
+
+/* ------------------------------------------- */
+/* 2. ZONE ACTIONS ET LOGS (CENTRE EN BAS) */
+/* ------------------------------------------- */
+.combat-interface {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    gap: 20px;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 30px; 
+    width: 100%;
+}
+
+.action-button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.2em;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    
+    background-color: #5a3d20;
+    border: 1px solid #4a3a2b;
+    color: #e0c8a8;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.attack-action-btn {
+    background-color: #c0392b; 
+    color: white; 
+    box-shadow: 0 4px 0 #922b21;
+}
+
+.flee-action-btn {
+    background-color: #3d2c20; 
+    color: #FFD700;
+    box-shadow: 0 4px 0 #2b1d14;
+}
+
+/* Logs */
+.combat-logs-panel {
+    width: 80%;
+    max-width: 700px;
+    /* CORRECTION : Rendre le panneau de logs semi-transparent (75%) */
+    background-color: rgba(26, 16, 8, 0.75); 
+    border: 1px solid #6b4e2a;
+    border-radius: 5px;
+    padding: 15px;
+    text-align: left;
+}
+
+.logs-content {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    color: #fff;
+}
+
+.log-entry {
+    margin: 5px 0;
+    padding: 3px;
+    border-bottom: 1px dotted #444;
+}
+
+/* Couleurs des logs */
+.log-success { color: #2ecc71; font-weight: bold; } 
+.log-defeat, .log-error { color: #e74c3c; font-weight: bold; } 
+
+/* Mise en évidence des dégâts */
+.damage-dealt { color: #FFD700; } 
+.damage-taken { color: #f1c40f; }

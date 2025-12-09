@@ -265,4 +265,10 @@ class Player
         }
         return $this;
     }
+
+    public function getCriticalChance(): int
+{
+
+    return 5; 
+}
 }

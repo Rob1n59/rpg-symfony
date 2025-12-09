@@ -1,42 +1,59 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Rencontre: {{ enemy.name }}{% endblock %}
+{% block title %}Résultat du Combat{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
-    {# Assurez-vous d'avoir ce fichier CSS pour le style #}
+    <link rel="stylesheet" href="{{ asset('css/combat.css') }}">
     <link rel="stylesheet" href="{{ asset('css/encounter_choice.css') }}">
 {% endblock %}
 
 {% block body %}
-    <div class="encounter-container">
+    {# Fond dynamique : Utilise l'image de l'ennemi vaincu pour le fond #}
+    {% set enemyImageURL = asset('images/enemies/' ~ lastEnemyName|lower ~ '.png') %}
+    <div class="game-page-background" style="--blurred-bg-image: url('{{ enemyImageURL }}');"></div>
+    
+    <div class="encounter-container" style="max-width: 800px; padding: 40px;">
         <div class="encounter-panel">
-            <h1>Un {{ enemy.name }} apparaît !</h1>
-            
-            <div class="enemy-details">
-                <img src="{{ asset('images/enemies/' ~ enemy.name|lower ~ '.png') }}" alt="{{ enemy.name }}" class="enemy-portrait">
+
+            {% if result == 'victory' %}
+                <h1 class="result-title victory" style="color: #2ecc71;">VICTOIRE !</h1>
+                <p class="message success">Vous avez vaincu le {{ lastEnemyName }} et vos prouesses sont récompensées.</p>
                 
-                <p class="enemy-stats">
-                    <strong>PV:</strong> {{ enemy.hp }} <br>
-                    <strong>Attaque:</strong> {{ enemy.attack }} <br>
-                    <strong>Défense:</strong> {{ enemy.defense }} <br>
-                    <strong>Récompense (XP/Or):</strong> {{ enemy.xpReward }} XP / {{ enemy.goldReward }} Or
-                </p>
-                <p class="description">{{ enemy.description }}</p>
-            </div>
-            
-            <h2>Que faites-vous ?</h2>
-            
-            <div class="action-buttons">
-                {# Bouton ATTAQUER: Redirige vers la route du CombatController pour l'affichage de l'arène #}
-                <a href="{{ path('combat_start') }}" class="action-button attack-button">
-                    Attaquer ! ⚔️
-                </a>
+                <div class="rewards enemy-details" style="background-color: #4a3a2b;">
+                    <h2>Récompenses de Combat</h2>
+                    
+                    <p>Vous avez gagné <strong style="color: gold;">{{ goldGained }} Or</strong> et <strong style="color: #79a83d;">{{ xpGained }} XP</strong>.</p>
+                    <hr style="border-color: rgba(255, 215, 0, 0.2); margin: 15px 0;">
+                    <p><strong>Total Or:</strong> <span style="color: gold;">{{ player.gold }}</span></p>
+                    <p><strong>Total XP:</strong> {{ player.experience }}</p>
+
+                    {# Affichage de la montée de niveau #}
+                    {% if leveledUp %} 
+                         <h3 style="color: #FFD700; margin-top: 20px;">🎉 MONTÉE DE NIVEAU !</h3>
+                         <p>Vous êtes maintenant au **Niveau {{ player.level }}** ! Vos PV et vos stats de base ont augmenté.</p>
+                         <p style="font-weight: bold; color: #98ff98;">Nouvelle Attaque: {{ player.calculateTotalAttack() }} / Nouvelle Défense: {{ player.calculateTotalDefense() }}</p>
+                    {% endif %}
+                </div>
                 
-                {# Bouton FUIR: Redirige vers la route de fuite gérée par le CombatController #}
-                <a href="{{ path('combat_flee') }}" class="action-button flee-button">
-                    Fuir 🏃
-                </a>
+                <p class="health-status">PV Actuels: {{ player.hp }} / {{ player.hpMax }}</p>
+
+            {% elseif result == 'defeat' %}
+                <h1 class="result-title defeat" style="color: #e74c3c;">DÉFAITE...</h1>
+                <p class="message danger">Vous avez été vaincu par le {{ lastEnemyName }}. Vous avez été secouru et soigné.</p>
+                
+                <div class="consequences enemy-details" style="background-color: #4a3a2b;">
+                    <p style="color: #ccc;">Vos PV ont été rétablis à <strong style="color: #2ecc71;">{{ player.hpMax }}</strong>.</p>
+                </div>
+
+            {% else %}
+                <h1 class="result-title">Résultat Inconnu</h1>
+            {% endif %}
+
+            <div class="action-buttons" style="margin-top: 30px;">
+               <a href="{{ returnToMapUrl }}" class="action-button flee-button">
+                    REPRENDRE LA ROUTE 
+                </a>
             </div>
         </div>
     </div>
