@@ -6,8 +6,7 @@ use App\Repository\PlayerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-// IMPORTANT: Suppression de l'import de l'EntityManager, car l'Entité ne doit pas en dépendre.
-// use Doctrine\ORM\EntityManagerInterface; 
+// use Doctrine\ORM\EntityManagerInterface; // Assurez-vous que cette ligne est bien retirée si elle est en commentaire dans votre original
 
 #[ORM\Entity(repositoryClass: PlayerRepository::class)]
 class Player
@@ -32,12 +31,13 @@ class Player
     #[ORM\Column]
     private ?int $defense = null;
 
-    // Bonus d'attaque et de défense provenant de l'équipement (mis à jour par le service)
+    // Champs existants pour les bonus d'équipement (maintenus)
     #[ORM\Column(nullable: true)]
     private ?int $equippedAttackBonus = 0; 
     
     #[ORM\Column(nullable: true)]
     private ?int $equippedDefenseBonus = 0; 
+    // FIN Champs existants
 
     #[ORM\Column]
     private ?int $gold = null;
@@ -47,7 +47,8 @@ class Player
 
     #[ORM\Column]
     private ?int $level = null;
-
+    
+    // Relation vers Location (maintenue)
     #[ORM\ManyToOne(targetEntity: Location::class)]
     #[ORM\JoinColumn(nullable: true)]
     private ?Location $currentLocation = null;
@@ -60,35 +61,56 @@ class Player
 
     #[ORM\OneToMany(targetEntity: PlayerItem::class, mappedBy: 'player', orphanRemoval: true)]
     private Collection $playerItems;
+    
+    // NOUVEAU CHAMP : Points d'Augure disponibles
+    #[ORM\Column(nullable: true)]
+    private ?int $augurPoints = 0; 
+    
+    // Suppression du champ 'baseStats' inutile car nous utilisons directement $attack et $defense comme base.
+
 
     public function __construct()
     {
         $this->playerItems = new ArrayCollection();
     }
     
-    // --- MÉTHODES DE CALCUL DES STATS TOTALES CORRIGÉES ---
+    // --- MÉTHODES DE CALCUL DES STATS TOTALES (Utilisation des bonus persistés) ---
 
-    /**
-     * Calcule l'Attaque totale (Base + Bonus Equipés) sans dépendre de l'EntityManager.
-     */
     public function calculateTotalAttack(): int
     {
-        // On retourne l'attaque de base PLUS le bonus qui est géré et persisté par le InventoryService.
+        // Utilise l'attaque de base PLUS le bonus équipé (votre logique actuelle)
         return ($this->attack ?? 0) + ($this->equippedAttackBonus ?? 0);
     }
 
-    /**
-     * Calcule la Défense totale (Base + Bonus Equipés) sans dépendre de l'EntityManager.
-     */
     public function calculateTotalDefense(): int
     {
-        // On retourne la défense de base PLUS le bonus qui est géré et persisté par le InventoryService.
+        // Utilise la défense de base PLUS le bonus équipé (votre logique actuelle)
         return ($this->defense ?? 0) + ($this->equippedDefenseBonus ?? 0);
     }
     
-    // --- FIN DES MÉTHODES DE CALCUL ---
+    // --- NOUVELLE LOGIQUE DE PROGRESSION ---
+
+    /**
+     * Applique une augmentation permanente à la stat de base.
+     */
+    public function increaseStat(string $statName, int $value): void
+    {
+        switch (strtolower($statName)) {
+            case 'attack':
+                $this->setAttack($this->getAttack() + $value);
+                break;
+            case 'defense':
+                $this->setDefense($this->getDefense() + $value);
+                break;
+            case 'hpmax':
+                // Les PV max augmentent, et les PV actuels sont soignés à la même hauteur
+                $this->setHpMax($this->getHpMax() + $value);
+                $this->setHp($this->getHp() + $value); 
+                break;
+        }
+    }
     
-    // --- GETTERS & SETTERS ---
+    // --- GETTERS & SETTERS (Harmonisation) ---
 
     public function getId(): ?int
     {
@@ -237,6 +259,18 @@ class Player
         $this->playerClassName = $playerClassName;
         return $this;
     }
+    
+    // NOUVEAU GETTER/SETTER pour Augur Points
+    public function getAugurPoints(): ?int
+    {
+        return $this->augurPoints;
+    }
+
+    public function setAugurPoints(?int $augurPoints): static
+    {
+        $this->augurPoints = $augurPoints;
+        return $this;
+    }
 
     /**
      * @return Collection<int, PlayerItem>
@@ -267,8 +301,7 @@ class Player
     }
 
     public function getCriticalChance(): int
-{
-
-    return 5; 
-}
+    {
+        return 5; 
+    }
 }

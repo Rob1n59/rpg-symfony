@@ -33,6 +33,13 @@
                          <h3 style="color: #FFD700; margin-top: 20px;">🎉 MONTÉE DE NIVEAU !</h3>
                          <p>Vous êtes maintenant au **Niveau {{ player.level }}** ! Vos PV et vos stats de base ont augmenté.</p>
                          <p style="font-weight: bold; color: #98ff98;">Nouvelle Attaque: {{ player.calculateTotalAttack() }} / Nouvelle Défense: {{ player.calculateTotalDefense() }}</p>
+                         
+                         {# Message pour les Points d'Augure gagnés #}
+                         {% if player.augurPoints > 0 %}
+                            <p style="color: gold; font-weight: bold; margin-top: 10px;">
+                                Vous avez gagné {{ player.augurPoints }} Point(s) d'Augure à dépenser ! Le bouton ci-dessous vous mènera à l'écran de progression.
+                            </p>
+                         {% endif %}
                     {% endif %}
                 </div>
                 
@@ -51,9 +58,10 @@
             {% endif %}
 
             <div class="action-buttons" style="margin-top: 30px;">
-               <a href="{{ returnToMapUrl }}" class="action-button flee-button">
-                    REPRENDRE LA ROUTE 
-                </a>
+                {# Le bouton utilise locationId pour revenir au lieu spécifique #}
+                <a href="{{ path('game_location_show', {'id': locationId}) }}" class="action-button flee-button">
+                    REPRENDRE LA ROUTE 🗺️
+                </a>
             </div>
         </div>
     </div>

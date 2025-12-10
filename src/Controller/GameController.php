@@ -200,6 +200,9 @@ class GameController extends AbstractController
             throw $this->createNotFoundException('Le lieu demandé n\'existe pas.');
         }
 
+        // CRITIQUE : Stocker l'ID du lieu dans la session
+        $session->set('current_location_id', $id); 
+
         // SIMPLIFICATION pour l'interface : pas de variante, pas de coffre, pas de retour historique
         $currentSceneVariant = ''; // Vide pour utiliser seulement l'ID dans Twig (ex: 1.png)
         $isChestLooted = false; // Désactivé
@@ -284,8 +287,8 @@ public function equipItem(
         int $optionId,
         SessionInterface $session,
         EntityManagerInterface $em,
-        \App\Repository\ItemRepository $itemRepository,
-        \App\Repository\PlayerItemRepository $playerItemRepository,
+        ItemRepository $itemRepository,
+        PlayerItemRepository $playerItemRepository,
         EnemyRepository $enemyRepository // Injection du repository Ennemi
     ): Response {
         if (!$session->has('player_id')) {
@@ -326,6 +329,9 @@ public function equipItem(
                     if (!empty($enemies)) {
                         $enemy = $enemies[array_rand($enemies)]; // Choix au hasard parmi les ennemis de la zone
 
+                        // CRITIQUE : Stocker l'ID du lieu en session ici
+                        $session->set('last_location_id', $locationId); 
+                        
                         // 3. Stocke l'ennemi en session et redirige vers la route de confirmation de combat
                         $session->set('enemy_id', $enemy->getId());
                         $this->addFlash('danger', 'Attention ! Un ' . $enemy->getName() . ' apparaît !');

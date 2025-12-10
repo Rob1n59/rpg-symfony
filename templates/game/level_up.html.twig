@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Progression : Dépenser des Points d'Augure{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/level_up.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/game_location_show.css') }}"> 
+{% endblock %}
+
+{% block body %}
+    {# Fond flou par défaut #}
+    {% set locationId = app.session.get('current_location_id') ?? 1 %}
+    <div class="game-page-background" style="--blurred-bg-image: url('{{ asset('images/location_scenes/' ~ locationId ~ '.png') }}');"></div>
+
+    <div class="level-up-container">
+        <div class="level-up-panel" style="z-index: 1001;"> {# CRITIQUE : AJOUTER Z-INDEX ÉLEVÉ #}
+            <h1 class="title">Le Chemin des Augures</h1>
+            
+            <p class="current-level">Niveau Actuel : <strong>{{ player.level }}</strong></p>
+            <p class="points-available">Points d'Augure disponibles : <strong>{{ player.augurPoints }}</strong></p>
+            
+            <div class="stat-choices">
+                
+                {% for stat, value in augurValues %}
+                    <div class="stat-card">
+                        
+                        {# Formulaire pour appliquer la statistique #}
+                        <form method="POST" action="{{ path('progression_apply_stat', {'statName': stat}) }}">
+                            <h2 class="stat-name">{{ stat|upper }}</h2>
+                            
+                            {% if stat == 'attack' %}
+                                <p class="current-stat">Actuel: {{ player.attack }}</p>
+                                <p class="increase-value">+{{ value }} ATK de Base</p>
+                            {% elseif stat == 'defense' %}
+                                <p class="current-stat">Actuel: {{ player.defense }}</p>
+                                <p class="increase-value">+{{ value }} DEF de Base</p>
+                            {% elseif stat == 'hpmax' %}
+                                <p class="current-stat">Actuel: {{ player.hpMax }}</p>
+                                <p class="increase-value">+{{ value }} PV Max</p>
+                            {% endif %}
+
+                            <button type="submit" class="action-button choose-stat-btn" 
+                                {% if player.augurPoints <= 0 %}disabled{% endif %}>
+                                Dépenser 1 Point
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if player.augurPoints <= 0 %}
+                <a href="{{ path('game_explore') }}" class="action-button continue-btn">
+                    Retourner à l'Exploration
+                </a>
+            {% endif %}
+
+            {# Affichage des messages flash (Succès ou Erreur) #}
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="flash-message flash-{{ label }}">
+                        {{ message|raw }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ces éléments sont définis dans base.html.twig ou location_show.html.twig
+            const inventoryModal = document.getElementById('inventory-modal');
+            const itemTooltip = document.getElementById('item-tooltip');
+            
+            // Lancer le masquage après un court délai pour assurer que les éléments de l'overlay sont chargés dans le DOM
+            setTimeout(() => {
+                if (inventoryModal && !inventoryModal.classList.contains('hidden')) {
+                    inventoryModal.classList.add('hidden');
+                    console.log("Overlay d'inventaire masqué.");
+                }
+                if (itemTooltip && !itemTooltip.classList.contains('hidden')) {
+                    itemTooltip.classList.add('hidden');
+                    console.log("Tooltip masqué.");
+                }
+                
+                // Pour la sécurité si l'overlay n'a pas d'ID unique dans votre base.html.twig
+                // On peut aussi chercher un élément générique qui pourrait être l'overlay
+                const genericOverlay = document.querySelector('.modal-overlay:not(.hidden)');
+                if (genericOverlay) {
+                    genericOverlay.classList.add('hidden');
+                    console.log("Overlay générique masqué.");
+                }
+
+                window.dispatchEvent(new Event('resize'));
+            }, 100); // Délai de 100ms
+        });
+    </script>
+{% endblock %}

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service; // <-- Namespace correspondant à l'import dans CombatController
+namespace App\Service;
 
 use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,13 +16,11 @@ class ExperienceService
 
     /**
      * Calcule l'XP requise pour atteindre un niveau donné.
-     * Courbe d'XP simple : XP requise = 100 * (Niveau * (Niveau + 1) / 2)
      * @param int $level Le niveau cible.
      * @return int L'XP totale requise pour ce niveau.
      */
     public function getRequiredExpForNextLevel(int $level): int
     {
-        // Utilise une formule de progression standard (somme arithmétique)
         if ($level < 1) {
             return 100;
         }
@@ -41,7 +39,6 @@ class ExperienceService
         $leveledUp = false;
 
         // Boucle pour gérer les montées de niveau multiples si l'XP est très élevé
-        // La condition vérifie si l'XP totale du joueur atteint ou dépasse l'XP TOTALE requise pour le niveau suivant
         while ($player->getExperience() >= $this->getRequiredExpForNextLevel($player->getLevel())) {
             $this->levelUp($player);
             $leveledUp = true;
@@ -50,7 +47,8 @@ class ExperienceService
         return [
             'leveledUp' => $leveledUp,
             'oldLevel' => $oldLevel,
-            'newLevel' => $player->getLevel()
+            'newLevel' => $player->getLevel(),
+            'pointsAvailable' => $player->getAugurPoints() // Ajout de l'info des points
         ];
     }
     
@@ -61,16 +59,19 @@ class ExperienceService
     {
         $player->setLevel($player->getLevel() + 1);
         
-        // --- LOGIQUE D'AUGMENTATION DES STATS ---
+        // --- Attribution du Point d'Augure ---
+        $player->setAugurPoints($player->getAugurPoints() + 1);
         
-        // Augmentation des PV Max
-        $newHpMax = $player->getHpMax() + 10;
+        // --- Augmentation des Stats de Base (Automatique) ---
+        
+        // Augmentation des PV Max (auto)
+        $newHpMax = $player->getHpMax() + 5; // +5 PV auto
         $player->setHpMax($newHpMax);
         
         // Rétablir les PV du joueur au nouveau maximum
         $player->setHp($newHpMax); 
         
-        // Augmentation des stats de base ATK/DEF
+        // Augmentation des stats de base ATK/DEF (auto)
         $player->setAttack($player->getAttack() + 1);
         $player->setDefense($player->getDefense() + 1);
         

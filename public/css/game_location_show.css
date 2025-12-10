@@ -437,7 +437,7 @@ body::before {
     
     /* L'effet de flou et d'opacité ! */
     filter: blur(5px); /* Ajustez la valeur (ex: 5px à 15px) pour plus/moins de flou */
-    opacity: 15; /* Ajustez pour un fond plus ou moins sombre */
+    opacity: 1; /* Ajustez pour un fond plus ou moins sombre */
     
     /* Petite astuce pour cacher les bords flous et nets du conteneur */
     transform: scale(1.02);

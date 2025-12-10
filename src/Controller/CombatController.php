@@ -10,8 +10,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\Request; // Importation de Request pour la méthode combat
-use App\Service\ExperienceService; // Service de gestion de l'XP
+use App\Service\ExperienceService;
 
 class CombatController extends AbstractController
 {
@@ -21,8 +20,7 @@ class CombatController extends AbstractController
     #[Route('/combat', name: 'combat_start')]
     public function combat(
         SessionInterface $session,
-        EntityManagerInterface $em,
-        Request $request // Injection de Request
+        EntityManagerInterface $em
     ): Response {
         $player = $em->getRepository(Player::class)->find($session->get('player_id'));
         $enemy = $em->getRepository(Enemy::class)->find($session->get('enemy_id'));
@@ -32,25 +30,17 @@ class CombatController extends AbstractController
             return $this->redirectToRoute('game_explore');
         }
 
-        // --- GESTION DES PV DE L'ENNEMI (Hypothèse: l'Entité de base est modifiée) ---
+        // Assurez-vous que l'ennemi a bien son maxHp pour la barre de vie
         if (!$enemy->getHpMax()) {
             $enemy->setHpMax($enemy->getHp()); 
         }
         
+        // Réinitialisation des PV de l'ennemi à chaque nouveau combat
         if ($enemy->getHp() <= 0 || $enemy->getHp() != $enemy->getHpMax()) {
              $enemy->setHp($enemy->getHpMax());
-             $em->flush(); 
+             $em->flush();
         }
-        // ------------------------------------------------------------------
         
-        // --- NOUVEAU : ENREGISTREMENT DE L'URL DE RETOUR ---
-        // On suppose que la page précédente (Referer) ou une route par défaut est la location.
-        // NOTE: Si votre page de location est dynamique (ex: /explore/{id}), il est préférable 
-        // de stocker l'URL EXACTE dans la session AVANT la redirection vers '/combat'.
-        $returnUrl = $request->headers->get('referer') ?: $this->generateUrl('game_explore');
-        $session->set('return_to_map_url', $returnUrl);
-        // ---------------------------------------------------
-
         // Stocke le niveau actuel du joueur (pour la comparaison de montée de niveau)
         $session->set('last_combat_level', $player->getLevel());
         // Nettoie les sessions de récompense
@@ -64,7 +54,7 @@ class CombatController extends AbstractController
     }
 
     /**
-     * Route gérant un tour de combat (appelée par AJAX) avec variance et coups critiques.
+     * Route gérant un tour de combat (appelée par AJAX).
      */
     #[Route('/combat/attack', name: 'combat_attack', methods: ['POST'])]
     public function attack(
@@ -78,51 +68,20 @@ class CombatController extends AbstractController
         $player = $em->getRepository(Player::class)->find($playerId);
         $enemy = $em->getRepository(Enemy::class)->find($enemyId);
 
-        // Si l'ennemi est déjà mort (0 PV), on renvoie une erreur pour éviter de boucler
         if (!$player || !$enemy || $player->getHp() <= 0 || $enemy->getHp() <= 0) {
             return new JsonResponse(['status' => 'error', 'message' => 'Combat déjà terminé ou entités invalides.'], 400);
         }
         
-        // Récupération des statistiques totales
+        // --- CALCUL DES DÉGÂTS UTILISANT LES STATS TOTALES ---
         $playerTotalAttack = $player->calculateTotalAttack();
         $playerTotalDefense = $player->calculateTotalDefense();
+
+        // 1. Dégâts infligés par le joueur à l'ennemi
+        $enemyDamage = max(1, $playerTotalAttack - $enemy->getDefense());
         
-        // Initialisation des variables critiques
-        $isPlayerCrit = false;
-        $isEnemyCrit = false; 
-
-        // --- CALCUL DES DÉGÂTS DU JOUEUR (avec Variance et Critique) ---
+        // 2. Dégâts infligés par l'ennemi au joueur
+        $playerDamage = max(1, $enemy->getAttack() - $playerTotalDefense);
         
-        // 1. Variance des dégâts (entre 0.90 et 1.10)
-        $variance = mt_rand(90, 110) / 100; 
-
-        // 2. Dégâts de base du joueur
-        $baseEnemyDamage = $playerTotalAttack - $enemy->getDefense();
-        $enemyDamage = (int)round($baseEnemyDamage * $variance);
-        
-        // 3. Vérification du Coup Critique du Joueur (Ex: 5% par défaut si méthode getCriticalChance n'existe pas)
-        $playerCritChance = method_exists($player, 'getCriticalChance') ? $player->getCriticalChance() : 5;
-        
-        if (mt_rand(1, 100) <= $playerCritChance) {
-            $enemyDamage *= 2; // Facteur critique (double les dégâts)
-            $isPlayerCrit = true;
-        }
-
-        // 4. S'assurer que les dégâts sont toujours >= 1
-        $enemyDamage = max(1, $enemyDamage);
-
-
-        // --- CALCUL DES DÉGÂTS DE L'ENNEMI (avec Variance seulement) ---
-        
-        // 1. Dégâts de base de l'ennemi
-        $basePlayerDamage = $enemy->getAttack() - $playerTotalDefense;
-        // Utiliser la même variance pour la symétrie
-        $playerDamage = (int)round($basePlayerDamage * $variance); 
-        
-        // 2. S'assurer que les dégâts sont toujours >= 1
-        $playerDamage = max(1, $playerDamage);
-
-
         // --- JOUEUR ATTAQUE ---
         $enemy->setHp($enemy->getHp() - $enemyDamage);
         
@@ -131,7 +90,10 @@ class CombatController extends AbstractController
             $enemy->setHp(0); 
             
             // Gain de récompenses
-            $xpGained = $enemy->getXpReward();
+            // CRITIQUE : XP aléatoire implémentée (entre 20 et 40)
+            $xpGained = rand(20, 40); 
+            
+            // L'or reste le montant de base de l'ennemi
             $goldGained = $enemy->getGoldReward();
 
             $player->setExperience($player->getExperience() + $xpGained);
@@ -140,10 +102,13 @@ class CombatController extends AbstractController
             // LOGIQUE DE MONTÉE DE NIVEAU
             $levelUpData = $experienceService->checkLevelUp($player);
             
-            // Stocker les gains exacts en session pour que la vue Result puisse les afficher
+            // CRITIQUE : Stocker les gains exacts en session pour que la vue Result puisse les afficher
             $session->set('goldGained', $goldGained);
             $session->set('xpGained', $xpGained);
             $session->set('last_enemy_name', $enemy->getName()); 
+            
+            // Stocker si le joueur a des points à dépenser
+            $session->set('has_augur_points', $player->getAugurPoints() > 0);
 
             $em->flush();
             $session->remove('enemy_id'); // Fin du combat
@@ -155,10 +120,8 @@ class CombatController extends AbstractController
                 'damageDealt' => $enemyDamage,
                 'leveledUp' => $levelUpData['leveledUp'],
                 'newLevel' => $levelUpData['newLevel'], 
-                'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'victory']),
-                'isPlayerCrit' => $isPlayerCrit, 
-                'goldGained' => $goldGained,
-                'xpGained' => $xpGained,
+                // La redirection vers combat_result est maintenue pour afficher les récompenses
+                'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'victory'])
             ]);
         }
 
@@ -180,8 +143,7 @@ class CombatController extends AbstractController
                 'status' => 'defeat',
                 'enemyName' => $enemy->getName(),
                 'damageTaken' => $playerDamage,
-                'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'defeat']),
-                'isEnemyCrit' => $isEnemyCrit,
+                'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'defeat'])
             ]);
         }
 
@@ -195,8 +157,6 @@ class CombatController extends AbstractController
             'damageTaken' => $playerDamage,
             'enemyHp' => $enemy->getHp(),
             'playerHp' => $player->getHp(),
-            'isPlayerCrit' => $isPlayerCrit,
-            'isEnemyCrit' => $isEnemyCrit,
         ]);
     }
     
@@ -221,23 +181,25 @@ class CombatController extends AbstractController
         $playerId = $session->get('player_id');
         $player = $em->getRepository(Player::class)->find($playerId);
 
-        // Récupère les gains stockés en session APRES le combat pour l'affichage
+        // Récupère les données de session nécessaires pour l'affichage
         $xpGained = $session->get('xpGained', 0);
         $goldGained = $session->get('goldGained', 0);
         $lastCombatLevel = $session->get('last_combat_level', 0);
         $lastEnemyName = $session->get('last_enemy_name', 'default');
         
-        // --- NOUVEAU : Récupération et nettoyage de l'URL de retour ---
-        $returnToMapUrl = $session->get('return_to_map_url', $this->generateUrl('game_explore')); 
-        $session->remove('return_to_map_url');
-        // -------------------------------------------------------------
+        // CRITIQUE : Récupérer l'ID du lieu actuel stocké dans showLocation (Fix de l'erreur précédente)
+        $currentLocationId = $session->get('current_location_id', 1);
         
-        // Nettoie les autres variables de session après lecture
+        // Récupère l'information critique : a-t-on des points à dépenser ?
+        $hasAugurPoints = $session->get('has_augur_points', false);
+        
+        // Nettoie les variables de session après lecture
         $session->remove('xpGained');
         $session->remove('goldGained');
         $session->remove('last_combat_level');
         $session->remove('last_enemy_name');
-        
+        $session->remove('has_augur_points'); // Nettoyer le flag après lecture
+
         
         // Si défaite et que le joueur est mort, on le remet en vie pour l'exploration
         if ($result === 'defeat' && $player && $player->getHp() <= 0) {
@@ -245,14 +207,22 @@ class CombatController extends AbstractController
              $em->flush();
         }
         
+        // Si le joueur a des points ET qu'il a gagné, on le redirige directement vers l'écran de progression APRÈS l'affichage rapide des récompenses
+        if ($result === 'victory' && $hasAugurPoints) {
+            $this->addFlash('info', 'Vous avez gagné des Points d\'Augure ! Vous devez les dépenser avant de continuer.');
+            // Redirige vers la page de progression
+            return $this->redirectToRoute('progression_level_up');
+        }
+
+        // Sinon, affiche simplement la page de résultat classique
         return $this->render('game/result.html.twig', [
-            'result' => $result, // 'victory' ou 'defeat'
+            'result' => $result,
             'player' => $player,
             'xpGained' => $xpGained,
             'goldGained' => $goldGained,
             'leveledUp' => $player && $player->getLevel() > $lastCombatLevel,
             'lastEnemyName' => $lastEnemyName,
-            'returnToMapUrl' => $returnToMapUrl, // NOUVEAU : Passe l'URL à la vue
+            'locationId' => $currentLocationId, // CRITIQUE : Transmission de la variable
         ]);
     }
 }

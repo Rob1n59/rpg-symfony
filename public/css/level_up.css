@@ -1,0 +1,131 @@
+/* Assurez-vous que les styles du fond (body, .game-page-background) sont définis dans base.css ou game_location_show.css */
+
+.level-up-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.level-up-panel {
+    background-color: rgba(26, 16, 8, 0.9); /* Fond sombre semi-transparent */
+    border: 3px solid #6b4e2a; 
+    border-radius: 10px;
+    padding: 40px;
+    max-width: 800px;
+    width: 90%;
+    text-align: center;
+    color: #e0c8a8;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+}
+
+.title {
+    color: #FFD700;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 3px #000;
+}
+
+.points-available {
+    font-size: 1.4em;
+    color: #98ff98;
+    margin-bottom: 30px;
+}
+.points-available strong {
+    font-size: 1.2em;
+}
+
+.stat-choices {
+    display: flex;
+    gap: 20px;
+    justify-content: space-around;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background-color: #3d2c20;
+    border: 1px solid #4a3a2b;
+    border-radius: 8px;
+    padding: 20px;
+    width: 30%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(255, 215, 0, 0.2);
+}
+
+.stat-name {
+    color: #FFD700;
+    font-size: 1.6em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    padding-bottom: 10px;
+}
+
+.current-stat, .increase-value {
+    margin: 8px 0;
+    font-size: 1.1em;
+}
+
+.increase-value {
+    font-weight: bold;
+    color: #c9e0a8;
+}
+
+.choose-stat-btn {
+    padding: 10px 20px;
+    background-color: #2ecc71; /* Vert clair */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 15px;
+    transition: background-color 0.2s;
+}
+
+.choose-stat-btn:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+
+.choose-stat-btn:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.continue-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    background-color: #7b5b3a;
+    color: #FFD700;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: background-color 0.2s;
+}
+.continue-btn:hover {
+    background-color: #6b4e2a;
+}
+
+.flash-message {
+    padding: 10px;
+    margin-top: 20px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.flash-success {
+    background-color: #27ae60;
+    color: white;
+}
+.flash-error {
+    background-color: #c0392b;
+    color: white;
+}
