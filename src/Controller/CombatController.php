@@ -56,109 +56,140 @@ class CombatController extends AbstractController
     /**
      * Route gérant un tour de combat (appelée par AJAX).
      */
-    #[Route('/combat/attack', name: 'combat_attack', methods: ['POST'])]
-    public function attack(
-        SessionInterface $session,
-        EntityManagerInterface $em,
-        ExperienceService $experienceService // Injection du service XP
-    ): JsonResponse {
-        $playerId = $session->get('player_id');
-        $enemyId = $session->get('enemy_id');
+    // Dans src/Controller/CombatController.php
+
+/**
+ * Route gérant un tour de combat (appelée par AJAX).
+ */
+#[Route('/combat/attack', name: 'combat_attack', methods: ['POST'])]
+public function attack(
+    SessionInterface $session,
+    EntityManagerInterface $em,
+    ExperienceService $experienceService // Injection du service XP
+): JsonResponse {
+    $playerId = $session->get('player_id');
+    $enemyId = $session->get('enemy_id');
+    
+    $player = $em->getRepository(Player::class)->find($playerId);
+    $enemy = $em->getRepository(Enemy::class)->find($enemyId);
+
+    if (!$player || !$enemy || $player->getHp() <= 0 || $enemy->getHp() <= 0) {
+        return new JsonResponse(['status' => 'error', 'message' => 'Combat déjà terminé ou entités invalides.'], 400);
+    }
+    
+    // --- CALCUL DES DÉGÂTS UTILISANT LES STATS TOTALES ---
+    $playerTotalAttack = $player->calculateTotalAttack();
+    $playerTotalDefense = $player->calculateTotalDefense();
+    // 1. Dégâts infligés par le joueur à l'ennemi
+    $playerBaseDamage = $player->calculateDamage();
+    $enemyDamage = max(1, $playerBaseDamage - $enemy->getDefense());
+
+    // 2. Dégâts infligés par l'ennemi au joueur (CORRECTION DES DÉGÂTS BLOQUÉS À 1)
+    $enemyBaseDamage = $enemy->calculateDamage(); // Aléatoire entre 1 et 5
+    $damageReduction = $playerTotalDefense;
+
+    if ($enemy->getAttack() < 10) {
+    // Si ATK < 10 (comme le Goblin), on ignore la défense pour garantir le RNG [random number generation].
+    $playerDamage = max(1, $enemyBaseDamage); // Résultat : 1 à 5 dégâts
+    } else {
+    // Logique pour les ennemis plus forts
+    $effectiveDefense = (int)($damageReduction * 0.25);
+    $playerDamage = max(1, $enemyBaseDamage - $effectiveDefense);
+    }
+    // Calcul de la réduction effective (utilise seulement 25% de la DEF totale du joueur)
+    $effectiveDefense = (int)($damageReduction * 0.25); // Ex: DEF 12 -> Réduction 3
+
+    // Dégâts finaux reçus par le joueur (min 1 dégât)
+    $playerDamage = max(1, $enemyBaseDamage - $effectiveDefense);
+    
+    // 2. Dégâts infligés par l'ennemi au joueur (CORRECTION CRITIQUE)
+    
+    // a. Dégâts de base de l'ennemi (aléatoire : 1 à ATK)
+    $enemyBaseDamage = $enemy->calculateDamage(); // Utilise Enemy::calculateDamage()
+    
+    // b. Application de la défense du joueur
+    $damageReduction = $playerTotalDefense;
+
+    // c. Dégâts finaux reçus par le joueur (min 1 dégât)
+    $playerDamage = max(1, $enemyBaseDamage - (int)($damageReduction / 2));
+    
+    // --- JOUEUR ATTAQUE ---
+    $enemy->setHp($enemy->getHp() - $enemyDamage);
+    
+    // 3. VÉRIFICATION : Ennemi vaincu ?
+    if ($enemy->getHp() <= 0) {
+        $enemy->setHp(0); 
         
-        $player = $em->getRepository(Player::class)->find($playerId);
-        $enemy = $em->getRepository(Enemy::class)->find($enemyId);
-
-        if (!$player || !$enemy || $player->getHp() <= 0 || $enemy->getHp() <= 0) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Combat déjà terminé ou entités invalides.'], 400);
-        }
+        // Gain de récompenses
+        // CRITIQUE : XP aléatoire implémentée (entre 20 et 40)
+        $xpGained = rand(20, 40); 
         
-        // --- CALCUL DES DÉGÂTS UTILISANT LES STATS TOTALES ---
-        $playerTotalAttack = $player->calculateTotalAttack();
-        $playerTotalDefense = $player->calculateTotalDefense();
+        // L'or reste le montant de base de l'ennemi
+        $goldGained = $enemy->getGoldReward();
 
-        // 1. Dégâts infligés par le joueur à l'ennemi
-        $enemyDamage = max(1, $playerTotalAttack - $enemy->getDefense());
+        $player->setExperience($player->getExperience() + $xpGained);
+        $player->setGold($player->getGold() + $goldGained);
         
-        // 2. Dégâts infligés par l'ennemi au joueur
-        $playerDamage = max(1, $enemy->getAttack() - $playerTotalDefense);
+        // LOGIQUE DE MONTÉE DE NIVEAU
+        $levelUpData = $experienceService->checkLevelUp($player);
         
-        // --- JOUEUR ATTAQUE ---
-        $enemy->setHp($enemy->getHp() - $enemyDamage);
+        // CRITIQUE : Stocker les gains exacts en session pour que la vue Result puisse les afficher
+        $session->set('goldGained', $goldGained);
+        $session->set('xpGained', $xpGained);
+        $session->set('last_enemy_name', $enemy->getName()); 
         
-        // 3. VÉRIFICATION : Ennemi vaincu ?
-        if ($enemy->getHp() <= 0) {
-            $enemy->setHp(0); 
-            
-            // Gain de récompenses
-            // CRITIQUE : XP aléatoire implémentée (entre 20 et 40)
-            $xpGained = rand(20, 40); 
-            
-            // L'or reste le montant de base de l'ennemi
-            $goldGained = $enemy->getGoldReward();
-
-            $player->setExperience($player->getExperience() + $xpGained);
-            $player->setGold($player->getGold() + $goldGained);
-            
-            // LOGIQUE DE MONTÉE DE NIVEAU
-            $levelUpData = $experienceService->checkLevelUp($player);
-            
-            // CRITIQUE : Stocker les gains exacts en session pour que la vue Result puisse les afficher
-            $session->set('goldGained', $goldGained);
-            $session->set('xpGained', $xpGained);
-            $session->set('last_enemy_name', $enemy->getName()); 
-            
-            // Stocker si le joueur a des points à dépenser
-            $session->set('has_augur_points', $player->getAugurPoints() > 0);
-
-            $em->flush();
-            $session->remove('enemy_id'); // Fin du combat
-
-            // Renvoie la réponse de victoire
-            return new JsonResponse([
-                'status' => 'victory',
-                'enemyName' => $enemy->getName(),
-                'damageDealt' => $enemyDamage,
-                'leveledUp' => $levelUpData['leveledUp'],
-                'newLevel' => $levelUpData['newLevel'], 
-                // La redirection vers combat_result est maintenue pour afficher les récompenses
-                'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'victory'])
-            ]);
-        }
-
-        // --- ENNEMI ATTAQUE (Seulement si l'ennemi est encore en vie) ---
-        $player->setHp($player->getHp() - $playerDamage);
-
-        // 4. VÉRIFICATION : Joueur vaincu ?
-        if ($player->getHp() <= 0) {
-            $player->setHp(0); 
-            
-            // Stocker le nom de l'ennemi vainqueur
-            $session->set('last_enemy_name', $enemy->getName()); 
-            
-            $em->flush();
-            $session->remove('enemy_id'); // Fin du combat
-
-            // Renvoie la réponse de défaite
-            return new JsonResponse([
-                'status' => 'defeat',
-                'enemyName' => $enemy->getName(),
-                'damageTaken' => $playerDamage,
-                'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'defeat'])
-            ]);
-        }
+        // Stocker si le joueur a des points à dépenser
+        $session->set('has_augur_points', $player->getAugurPoints() > 0);
 
         $em->flush();
+        $session->remove('enemy_id'); // Fin du combat
 
-        // 5. COMBAT EN COURS : Renvoie l'état mis à jour
+        // Renvoie la réponse de victoire
         return new JsonResponse([
-            'status' => 'ongoing',
+            'status' => 'victory',
             'enemyName' => $enemy->getName(),
             'damageDealt' => $enemyDamage,
-            'damageTaken' => $playerDamage,
-            'enemyHp' => $enemy->getHp(),
-            'playerHp' => $player->getHp(),
+            'leveledUp' => $levelUpData['leveledUp'],
+            'newLevel' => $levelUpData['newLevel'], 
+            // La redirection vers combat_result est maintenue pour afficher les récompenses
+            'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'victory'])
         ]);
     }
+
+    // --- ENNEMI ATTAQUE (Seulement si l'ennemi est encore en vie) ---
+    $player->setHp($player->getHp() - $playerDamage);
+
+    // 4. VÉRIFICATION : Joueur vaincu ?
+    if ($player->getHp() <= 0) {
+        $player->setHp(0); 
+        
+        // Stocker le nom de l'ennemi vainqueur
+        $session->set('last_enemy_name', $enemy->getName()); 
+        
+        $em->flush();
+        $session->remove('enemy_id'); // Fin du combat
+
+        // Renvoie la réponse de défaite
+        return new JsonResponse([
+            'status' => 'defeat',
+            'enemyName' => $enemy->getName(),
+            'damageTaken' => $playerDamage,
+            'redirectUrl' => $this->generateUrl('combat_result', ['result' => 'defeat'])
+        ]);
+    }
+
+    $em->flush();
+
+    // 5. COMBAT EN COURS : Renvoie l'état mis à jour
+    return new JsonResponse([
+        'status' => 'ongoing',
+        'enemyName' => $enemy->getName(),
+        'damageDealt' => $enemyDamage,
+        'damageTaken' => $playerDamage,
+        'enemyHp' => $enemy->getHp(),
+        'playerHp' => $player->getHp(),
+    ]);
+}   
     
     /**
      * Gère la tentative de fuite.

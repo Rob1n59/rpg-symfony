@@ -5,13 +5,12 @@
 {% block stylesheets %}
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('css/encounter_choice.css') }}">
-    {# Assurez-vous d'avoir game_location_show.css ou combat.css pour le style .game-page-background #}
+   
     <link rel="stylesheet" href="{{ asset('css/combat.css') }}">
 {% endblock %}
 
 {% block body %}
-    {# CORRECTION CRITIQUE: Ajout de la div pour le fond de la zone (utilise l'ID du lieu) #}
-    {# 'location' est passé par GameController::encounterChoice #}
+   
     <div class="game-page-background" style="--blurred-bg-image: url('{{ asset('images/location_scenes/' ~ location.id ~ '.png') }}');"></div>
 
     <div class="encounter-container">
@@ -33,14 +32,13 @@
             <h2>Que faites-vous ?</h2>
             
             <div class="action-buttons">
-                {# Bouton ATTAQUER: Redirige vers la route du CombatController pour l'affichage de l'arène #}
+             
                 <a href="{{ path('combat_start') }}" class="action-button attack-button">
                     Attaquer ! ⚔️
                 </a>
                 
-                {# Bouton FUIR: Redirige vers la route de fuite gérée par le CombatController #}
-                <a href="{{ path('combat_flee') }}" class="action-button flee-button">
-                    Fuir 🏃
+                <a href="{{ path('game_flee', {'locationId': locationId}) }}" class="action-button flee-button">
+                    Fuir !
                 </a>
             </div>
         </div>

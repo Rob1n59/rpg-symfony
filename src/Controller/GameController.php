@@ -4,7 +4,12 @@ namespace App\Controller;
 
 use App\Entity\Player;
 use App\Entity\Enemy;
+use App\Entity\PlayerItem; // Ajout
+use App\Service\InventoryService; // Ajout : Assurez-vous d'avoir ce service
+use App\Service\ExperienceService; // Ajout
 use App\Repository\EnemyRepository;
+use App\Repository\PlayerItemRepository; // Ajout
+use App\Repository\ItemRepository; // Ajout
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -12,9 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use App\Repository\PlayerItemRepository;
-use App\Entity\PlayerItem;
-use App\Repository\ItemRepository;
+
 
 class GameController extends AbstractController
 {
@@ -126,13 +129,13 @@ class GameController extends AbstractController
         $player->setLevel(1);
         $player->setPlayerClassId($classId);
         $player->setPlayerClassName($stats['name']);
+        $player->setAugurPoints(0); 
 
         $em->persist($player);
         $em->flush();
 
         $session->set('player_id', $player->getId());
 
-        // NETTOYAGE: Suppression des données de session relatives aux variantes de scène
         $session->remove('player_location_variants');
         $session->remove('player_location_variant_history');
         $session->remove('chests_looted');
@@ -180,7 +183,8 @@ class GameController extends AbstractController
     public function showLocation(
         int $id,
         SessionInterface $session,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        ExperienceService $xpService
     ): Response {
         if (!$session->has('player_id')) {
             return $this->redirectToRoute('choose_hero');
@@ -200,35 +204,67 @@ class GameController extends AbstractController
             throw $this->createNotFoundException('Le lieu demandé n\'existe pas.');
         }
 
-        // CRITIQUE : Stocker l'ID du lieu dans la session
-        $session->set('current_location_id', $id); 
+        // --- ENREGISTREMENT ET GESTION DE L'ÉTAT DU LIEU ---
 
-        // SIMPLIFICATION pour l'interface : pas de variante, pas de coffre, pas de retour historique
-        $currentSceneVariant = ''; // Vide pour utiliser seulement l'ID dans Twig (ex: 1.png)
-        $isChestLooted = false; // Désactivé
-        $canGoBack = false; // Désactivé
+        $session->set('current_location_id', $id); 
+        $session->set('return_to_map_url', $this->generateUrl('game_location_show', ['id' => $id]));
+        
+        // CRITIQUE : CHARGEMENT CONDITIONNEL DE L'ENNEMI
+        $enemy = null;
+        $enemyId = $session->get('enemy_id');
+        
+        if ($enemyId) { 
+            $enemy = $em->getRepository(Enemy::class)->find($enemyId);
+            
+            // Sécurité : si l'ennemi n'est pas trouvé (combat terminé ou ID invalide), on nettoie.
+            if (!$enemy) {
+                $session->remove('enemy_id');
+            }
+        }
+        // ----------------------------------------------------------------------
+
+        // --- LOGIQUE XP pour la barre de progression ---
+        $currentLevel = $player->getLevel();
+        $xpRequiredCurrent = $xpService->getRequiredExpForNextLevel($currentLevel - 1); 
+        $xpRequiredNext = $xpService->getRequiredExpForNextLevel($currentLevel);
+        // -------------------------------------------
+
+        // SIMPLIFICATION
+        $currentSceneVariant = ''; 
+        $isChestLooted = false; 
+        $canGoBack = false;
 
         $sceneOptions = [
             ['id' => 101, 'text' => 'Continuer le chemin'],
             ['id' => 102, 'text' => 'Chercher des ressources'],
             ['id' => 103, 'text' => 'Retour à la carte'],
         ];
-        // 104 'Fouiller le coffre' et 105 'Revenir en arrière' sont retirés
-
+        
         return $this->render('game/location_show.html.twig', [
             'location' => $location,
             'sceneOptions' => $sceneOptions,
             'player' => $player,
+            'enemy' => $enemy, 
             'currentSceneVariant' => $currentSceneVariant,
             'isChestLooted' => $isChestLooted,
             'canGoBack' => $canGoBack,
+            'xpRequiredCurrent' => $xpRequiredCurrent, 
+            'xpRequiredNext' => $xpRequiredNext, 
         ]);
     }
+    #[Route('/session/remove_force_reload_flag', name: 'remove_force_reload_flag', methods: ['POST'])]
+    public function removeForceReloadFlag(SessionInterface $session): JsonResponse
+    {
+    // Supprime le flag de session
+    $session->remove('force_page_reload');
+    return new JsonResponse(['status' => 'removed']);
+    }
+    // --- ROUTE : INVENTAIRE ---
     #[Route('/game/inventory', name: 'game_inventory', methods: ['GET'])]
     public function showInventory(
         SessionInterface $session, 
         EntityManagerInterface $em,
-        \App\Repository\PlayerItemRepository $playerItemRepository // Injecte le repository pour l'inventaire
+        PlayerItemRepository $playerItemRepository 
     ): Response {
         $playerId = $session->get('player_id');
         $player = $em->getRepository(Player::class)->find($playerId);
@@ -237,22 +273,20 @@ class GameController extends AbstractController
             return $this->redirectToRoute('choose_hero');
         }
 
-        // Récupérer l'inventaire réel du joueur (tous les PlayerItem liés à ce joueur)
         $inventory = $playerItemRepository->findBy(['player' => $player]);
 
-       return $this->render('game/inventory_modal.html.twig', [
-        'player' => $player,
-        'inventory' => $inventory,
-    ]);
-}
-    // src/Controller/GameController.php (Méthode à ajouter)
-
+        return $this->render('game/inventory_modal.html.twig', [
+            'player' => $player,
+            'inventory' => $inventory,
+        ]);
+    }
+    
 #[Route('/game/equip_item/{playerItemId}', name: 'game_equip_item', methods: ['POST'])]
 public function equipItem(
     int $playerItemId,
     SessionInterface $session,
     EntityManagerInterface $em,
-    \App\Service\InventoryService $inventoryService // J'assume le service créé
+    \App\Service\InventoryService $inventoryService
 ): JsonResponse {
     $playerId = $session->get('player_id');
     $player = $em->getRepository(Player::class)->find($playerId);
@@ -262,24 +296,83 @@ public function equipItem(
         return new JsonResponse(['status' => 'error', 'message' => 'Objet ou joueur invalide.'], 400);
     }
     
+    $isEquippedBefore = $playerItem->isIsEquipped(); 
+    $itemName = $playerItem->getItem()->getName();
+    $logMessage = ''; // Initialisation pour éviter l'erreur de variable non définie
+    
     try {
-        // Le service gère toute la complexité (déséquiper l'ancien, équiper le nouveau, recalculer)
         $inventoryService->toggleEquipItem($player, $playerItem);
+        if ($isEquippedBefore) {
+            
+            $logMessage = "L'objet <span class=\"highlight-item\">{$itemName}</span> a été déséquipé.";
+        } else {
+            
+            $logMessage = "L'objet <span class=\"highlight-item\">{$itemName}</span> a été équipé.";
+        }
 
     } catch (\LogicException $e) {
         return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 400);
     }
 
-    // 2. RENVOI DES STATS MISES À JOUR
     return new JsonResponse([
         'status' => 'success',
         'isEquipped' => $playerItem->isIsEquipped(),
         'newAttack' => $player->calculateTotalAttack(), 
         'newDefense' => $player->calculateTotalDefense(), 
+        'message' => $logMessage 
     ]);
 }
+   #[Route('/game/consume_item/{playerItemId}', name: 'game_consume_item', methods: ['POST'])]
+public function consumeItem(
+    int $playerItemId,
+    SessionInterface $session,
+    EntityManagerInterface $em,
+    PlayerItemRepository $playerItemRepository
+): JsonResponse {
+    $playerId = $session->get('player_id');
+    $player = $em->getRepository(Player::class)->find($playerId);
+    $playerItem = $playerItemRepository->find($playerItemId);
 
-    // Gestion des options (Ressources, Retour, ENCOUNTER)
+    // Vérifications de base
+    if (!$player || !$playerItem || $playerItem->getPlayer()->getId() !== $playerId || $playerItem->getQuantity() <= 0) {
+        return new JsonResponse(['status' => 'error', 'message' => 'Objet invalide ou indisponible.'], 400);
+    }
+    
+    $item = $playerItem->getItem(); 
+
+    // 1. Vérification que c'est bien un consommable
+    if ($item->getType() !== 'consumable' || $item->getHealingAmount() <= 0) { // <--- CORRECTION ICI
+        return new JsonResponse(['status' => 'error', 'message' => 'Cet objet ne peut pas être consommé ou n\'a aucun effet de soin.'], 400);
+    }
+    
+    // 2. Appliquer l'effet de soin
+    $healAmount = $item->getHealingAmount(); // <--- CORRECTION ICI
+    $player->heal($healAmount);
+    
+    // 3. Déduire la quantité
+    $newQuantity = $playerItem->getQuantity() - 1;
+    
+    if ($newQuantity <= 0) {
+        $em->remove($playerItem);
+        $message = "Vous avez consommé une {$item->getName()} et récupéré {$healAmount} PV. Elle a disparu de votre inventaire.";
+    } else {
+        $playerItem->setQuantity($newQuantity);
+        $message = "Vous avez consommé une {$item->getName()} et récupéré {$healAmount} PV. Il vous en reste {$newQuantity}.";
+    }
+    
+    $em->flush();
+
+    // 4. Retourner les nouvelles stats pour la mise à jour du front-end
+    return new JsonResponse([
+        'status' => 'success',
+        'message' => $message,
+        'newHp' => $player->getHp(),
+        'newHpMax' => $player->getHpMax(),
+        'playerItemId' => $playerItemId 
+    ]);
+}
+    
+    // --- ROUTE : GESTION DES OPTIONS (LOOT, CONTINUER, RETOUR) ---
     #[Route('/game/handle-option/{locationId}/{optionId}', name: 'game_handle_option', methods: ['GET', 'POST'])]
     public function handleOption(
         Request $request,
@@ -289,7 +382,7 @@ public function equipItem(
         EntityManagerInterface $em,
         ItemRepository $itemRepository,
         PlayerItemRepository $playerItemRepository,
-        EnemyRepository $enemyRepository // Injection du repository Ennemi
+        EnemyRepository $enemyRepository
     ): Response {
         if (!$session->has('player_id')) {
             return $this->redirectToRoute('choose_hero');
@@ -311,46 +404,41 @@ public function equipItem(
         $goldChange = 0;
         $message = 'Rien trouvé.';
         $flashType = 'warning';
-        $newPlayerStats = [];
         // ------------------------------------------
 
         switch ($optionId) {
             case 101: // Continuer le chemin (Risque de Rencontre)
                 
-                // 1. Déclenche le jet de dés (50% de chance d'une rencontre dans l'exemple)
                 $encounterChance = 50; 
                 if (rand(1, 100) <= $encounterChance) {
                     
-                    // NOUVELLE LOGIQUE: Recherche d'ennemis basés sur le danger de la zone
                     $locationDangerLevel = $currentLocation['dangerLevel'];
-                    // Utilisation de la nouvelle méthode du Repository
                     $enemies = $enemyRepository->findEnemiesByDangerLevel($locationDangerLevel);
 
                     if (!empty($enemies)) {
-                        $enemy = $enemies[array_rand($enemies)]; // Choix au hasard parmi les ennemis de la zone
+                        $enemy = $enemies[array_rand($enemies)]; 
 
-                        // CRITIQUE : Stocker l'ID du lieu en session ici
+                        if ($enemy->getHp() != $enemy->getHpMax()) {
+                            $enemy->setHp($enemy->getHpMax());
+                            $em->flush(); // CRITIQUE : Enregistrer l'état pour les vues suivantes
+                        }
+
                         $session->set('last_location_id', $locationId); 
-                        
-                        // 3. Stocke l'ennemi en session et redirige vers la route de confirmation de combat
                         $session->set('enemy_id', $enemy->getId());
                         $this->addFlash('danger', 'Attention ! Un ' . $enemy->getName() . ' apparaît !');
                         
-                        // Redirection vers une route qui demande l'action (Attaquer/Fuite)
                         return $this->redirectToRoute('game_encounter_choice', ['locationId' => $locationId]); 
                     }
                 }
                 
-                // Si aucune rencontre ou pas d'ennemi trouvé
                 $this->addFlash('info', 'Vous continuez votre chemin sans encombre.');
                 return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
 
             case 102: // Chercher des ressources (LOOT COMPLET)
-                // ... (La logique de loot que vous aviez déjà) ...
+                
                 $chanceToFind = rand(1, 100);
 
                 if ($chanceToFind <= 70) {
-                    // 30% de chance de trouver un objet (sur le succès de la recherche)
                     if (rand(1, 100) <= 30) { 
                         
                         $availableItemNames = ['Épée en Fer', 'Hache de Bois', 'Arc Court', 'Bâton de Saule', 'Potion de soin'];
@@ -367,7 +455,7 @@ public function equipItem(
                                 $message = sprintf('Vous avez trouvé une <span class="highlight-item">%s</span> et en avez maintenant %d !', $foundItem->getName(), $existingPlayerItem->getQuantity());
                                 $flashType = 'success';
                             } elseif (!$existingPlayerItem) {
-                                $playerItem = new \App\Entity\PlayerItem();
+                                $playerItem = new PlayerItem();
                                 $playerItem->setPlayer($player);
                                 $playerItem->setItem($foundItem);
                                 $playerItem->setQuantity(1);
@@ -410,7 +498,6 @@ public function equipItem(
                     'playerStats' => [
                         'gold' => $player->getGold(),
                         'hp' => $player->getHp(),
-                        // Ajout des stats totales Attaque/Défense (y compris équipement)
                         'attack' => $player->calculateTotalAttack(),
                         'defense' => $player->calculateTotalDefense(),
                     ]
@@ -426,7 +513,7 @@ public function equipItem(
         }
     }
     
-    // --- NOUVELLE ROUTE : CHOIX AVANT LE DÉBUT DU COMBAT ---
+    // --- ROUTE : CHOIX AVANT LE DÉBUT DU COMBAT ---
     #[Route('/game/encounter/choice/{locationId}', name: 'game_encounter_choice')]
     public function encounterChoice(
         int $locationId,
@@ -441,14 +528,47 @@ public function equipItem(
             return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
         }
 
-        // Récupère les données de la zone pour passer l'ID de l'image
         $location = $this->getLocationDataById($locationId);
         
-        // Montre une page ou une modale demandant au joueur ce qu'il veut faire
         return $this->render('game/encounter_choice.html.twig', [
             'enemy' => $enemy,
             'locationId' => $locationId,
-            'location' => $location // <-- Ajout de la variable location
+            'location' => $location 
         ]);
+    }
+    
+    // --- ROUTE : FUITE ---
+    #[Route('/game/flee/{locationId}', name: 'game_flee')]
+    public function flee(
+        int $locationId,
+        SessionInterface $session,
+        EntityManagerInterface $em
+    ): Response {
+        $playerId = $session->get('player_id');
+        $player = $em->getRepository(Player::class)->find($playerId);
+
+        if (!$player) {
+            return $this->redirectToRoute('choose_hero');
+        }
+        
+        // --- Logique de Fuite ---
+        $successChance = 50;
+        $fleeSuccessful = rand(1, 100) <= $successChance;
+
+        // CRITIQUE : Le combat est terminé, on nettoie la session.
+        $session->remove('enemy_id'); 
+
+        if ($fleeSuccessful) {
+            $this->addFlash('success', 'Vous avez réussi à fuir l\'ennemi sans encombre !');
+        } else {
+            $damageTaken = 10;
+            $player->setHp(max(0, $player->getHp() - $damageTaken));
+            $em->flush();
+            
+            $message = sprintf("Vous n'avez pas réussi à fuir ! Vous avez subi %d dégâts en vous échappant.", $damageTaken);
+            $this->addFlash('danger', $message);
+        }
+        
+        return $this->redirectToRoute('game_location_show', ['id' => $locationId]); 
     }
 }

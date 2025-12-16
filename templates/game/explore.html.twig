@@ -7,11 +7,9 @@
 {% endblock %}
 
 {% block body %}
-    {# La carte du monde est en background CSS, le div ne contient plus les marqueurs #}
-    <div class="world-map-background"></div> {# <--- Assurez-vous que ce div est vide ici #}
+   
+    <div class="world-map-background"></div> 
 
-    {# Les marqueurs sont maintenant directement dans le body (via le block body) #}
-    {# Ils seront positionnés absolument par rapport au body/fenêtre #}
     {% for loc in locations %}
         <div
             class="map-marker"

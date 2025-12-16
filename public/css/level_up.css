@@ -1,24 +1,38 @@
-/* Assurez-vous que les styles du fond (body, .game-page-background) sont définis dans base.css ou game_location_show.css */
-
 .level-up-container {
+    /* Positionnement pour centrer la fenêtre sur toute la page */
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
     padding: 20px;
     box-sizing: border-box;
+    margin-top: auto;
+    margin-bottom: auto;
+    
+    z-index: 1000; 
 }
 
 .level-up-panel {
-    background-color: rgba(26, 16, 8, 0.9); /* Fond sombre semi-transparent */
+    background-color: rgba(26, 16, 8, 0.95); /* Légèrement plus opaque */
     border: 3px solid #6b4e2a; 
     border-radius: 10px;
-    padding: 40px;
+    padding: 20px;
     max-width: 800px;
     width: 90%;
     text-align: center;
     color: #e0c8a8;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    
+    position: relative;
+    max-height: auto;
+    overflow-y: hidden;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 .title {
@@ -28,6 +42,40 @@
     text-shadow: 1px 1px 3px #000;
 }
 
+/* --- STYLES DE LA BARRE XP --- */
+
+.xp-progress-bar-area {
+    width: 80%; /* Ajuster la largeur de la barre sous le titre */
+    margin: 10px auto 20px;
+}
+
+.xp-bar-container {
+    height: 18px; /* Légèrement plus épais */
+    background-color: #555; /* Fond sombre de la barre vide */
+    border-radius: 9px;
+    overflow: hidden;
+    margin-bottom: 5px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    border: 1px solid #4a3a2b; 
+}
+
+.xp-bar-fill {
+    height: 100%;
+    /* Couleur d'XP : Vert/Or Thématique (utilise un dégradé pour le relief) */
+    background: linear-gradient(to right, #4a8031, #79a83d); 
+    transition: width 0.5s ease-out;
+}
+
+.xp-text {
+    font-size: 0.9em;
+    color: #c9e0a8;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* --- FIN STYLES DE BARRE XP --- */
+
+
 .points-available {
     font-size: 1.4em;
     color: #98ff98;
@@ -35,20 +83,26 @@
 }
 .points-available strong {
     font-size: 1.2em;
+    color: #FFD700; /* Points Augure en Or */
+}
+
+.current-level {
+    font-size: 1.1em;
+    margin-bottom: 5px;
 }
 
 .stat-choices {
     display: flex;
     gap: 20px;
     justify-content: space-around;
-    margin-bottom: 30px;
+    margin-bottom: 15px;
 }
 
 .stat-card {
     background-color: #3d2c20;
     border: 1px solid #4a3a2b;
     border-radius: 8px;
-    padding: 20px;
+    padding: 10px 15px;
     width: 30%;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     transition: transform 0.2s;
@@ -62,15 +116,15 @@
 .stat-name {
     color: #FFD700;
     font-size: 1.6em;
-    margin-top: 0;
-    margin-bottom: 15px;
+    margin-top: 5px;
+    margin-bottom: 5px;
     border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 
 .current-stat, .increase-value {
-    margin: 8px 0;
-    font-size: 1.1em;
+    margin: 4px 0;
+    font-size: 1em;
 }
 
 .increase-value {
@@ -87,7 +141,7 @@
     cursor: pointer;
     font-weight: bold;
     text-transform: uppercase;
-    margin-top: 15px;
+    margin-top: 5px;
     transition: background-color 0.2s;
 }
 

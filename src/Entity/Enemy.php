@@ -191,4 +191,13 @@ class Enemy
 
         return $this;
     }
+    public function calculateDamage(): int
+{
+    // L'attaque de base doit être au moins 1 pour infliger des dégâts
+    $maxAttack = max(1, $this->attack ?? 1); 
+
+    // Retourne un nombre aléatoire entre 1 et l'attaque maximum.
+    return random_int(1, $maxAttack);
 }
+}
+    

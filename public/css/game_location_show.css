@@ -136,6 +136,31 @@ body::before {
     color: #FFD700;
 }
 
+/* Utilisation du même style de base que les HP, mais renommé */
+.xp-bar-container {
+    height: 12px; /* Hauteur de la barre, comme les HP */
+    background-color: #555; /* Fond sombre de la barre vide */
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 5px 0 10px;
+    border: 1px solid #4a3a2b; 
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Remplissage de la barre d'Expérience (Vert/Or) */
+.xp-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4a8031, #79a83d); /* Couleur XP verte/jaune */
+    transition: width 0.5s ease-out;
+}
+
+/* Ajustement pour le texte XP */
+.xp-text {
+    font-size: 0.95em;
+    color: #e0c8a8; /* Couleur claire pour le contraste */
+    margin-top: 5px;
+}
+
 /* --- Panneau d'informations sur le lieu (droite) --- */
 .location-info-panel {
     /* Styles de base inchangés pour la grille et le flex */

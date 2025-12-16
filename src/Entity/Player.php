@@ -88,6 +88,16 @@ class Player
         return ($this->defense ?? 0) + ($this->equippedDefenseBonus ?? 0);
     }
     
+    public function calculateDamage(): int
+    {
+   
+    $maxAttack = $this->calculateTotalAttack();
+
+   
+    $maxAttack = max(1, $maxAttack); 
+
+    return random_int(1, $maxAttack);
+    }
     // --- NOUVELLE LOGIQUE DE PROGRESSION ---
 
     /**
@@ -170,6 +180,12 @@ class Player
     {
         $this->defense = $defense;
         return $this;
+    }
+
+    public function heal(int $amount): static
+    {
+        $this->hp = min($this->hp + $amount, $this->hpMax);
+        return $this;   
     }
     
     public function getEquippedAttackBonus(): ?int

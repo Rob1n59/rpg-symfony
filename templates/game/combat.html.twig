@@ -225,8 +225,6 @@
         } // Fin de initCombatListeners
 
         // L'écouteur est appelé dès que le DOM est prêt.
-        document.addEventListener('DOMContentLoaded', function() {
-            initCombatListeners(); 
-        });
+       window.addEventListener('pageshow', initCombatListeners);
     </script>
 {% endblock %}

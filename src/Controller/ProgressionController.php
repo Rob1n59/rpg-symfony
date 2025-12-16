@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Service\ExperienceService;
 
 class ProgressionController extends AbstractController
 {
@@ -25,7 +26,8 @@ class ProgressionController extends AbstractController
     #[Route('/progression/level-up', name: 'progression_level_up')]
     public function levelUp(
         SessionInterface $session, 
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        ExperienceService $xpService
     ): Response {
         $playerId = $session->get('player_id');
         $player = $em->getRepository(Player::class)->find($playerId);
@@ -34,15 +36,33 @@ class ProgressionController extends AbstractController
             return $this->redirectToRoute('choose_hero');
         }
         
-        // Si le joueur n'a pas de points à dépenser, le renvoyer à l'exploration
+        // NOUVEAU : Récupérer le dernier ID de lieu visité
+        $lastLocationId = $session->get('current_location_id');
+
+        // Si le joueur n'a pas de points à dépenser, le renvoyer au lieu (si l'ID est disponible)
         if ($player->getAugurPoints() <= 0) {
             $this->addFlash('info', 'Vous n\'avez pas de Points d\'Augure à dépenser.');
+            
+            // CRITIQUE : Rediriger vers le lieu si l'ID est disponible, sinon vers la carte générale
+            if ($lastLocationId) {
+                 return $this->redirectToRoute('game_location_show', ['id' => $lastLocationId]);
+            }
             return $this->redirectToRoute('game_explore');
         }
+
+        // --- LOGIQUE XP pour la barre de progression ---
+        $currentLevel = $player->getLevel();
+        $xpRequiredCurrent = $xpService->getRequiredExpForNextLevel($currentLevel - 1); 
+        $xpRequiredNext = $xpService->getRequiredExpForNextLevel($currentLevel);
+        // ---------------------------
 
         return $this->render('game/level_up.html.twig', [
             'player' => $player,
             'augurValues' => self::AUGUR_VALUE,
+            // PASSAGE DE L'ID DU LIEU À LA VUE
+            'lastLocationId' => $lastLocationId, 
+            'xpRequiredCurrent' => $xpRequiredCurrent, 
+            'xpRequiredNext' => $xpRequiredNext, 
         ]);
     }
 
@@ -84,12 +104,21 @@ class ProgressionController extends AbstractController
 
         $this->addFlash('success', "Votre $statName a augmenté de $value ! Points restants : " . $player->getAugurPoints());
 
-        // Si le joueur a encore des points à dépenser, le renvoyer à la même page
+        // Récupérer l'ID de la dernière location avant de rediriger
+        $lastLocationId = $session->get('current_location_id');
+
+        // Si le joueur a encore des points à dépenser, le renvoyer à la même page (progression)
         if ($player->getAugurPoints() > 0) {
             return $this->redirectToRoute('progression_level_up');
         }
+        
+        $session->set('force_page_reload', true);
 
-        // Sinon, le renvoyer à l'exploration
+        // CRITIQUE : Rediriger vers le lieu spécifique si l'ID est connu, sinon vers la carte
+        if ($lastLocationId) {
+            return $this->redirectToRoute('game_location_show', ['id' => $lastLocationId]);
+        }
+        
         return $this->redirectToRoute('game_explore');
     }
 }
