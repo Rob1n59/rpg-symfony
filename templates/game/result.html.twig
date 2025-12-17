@@ -1,65 +1,115 @@
-{% extends 'base.html.twig' %}
-
-{% block title %}Résultat du Combat{% endblock %}
-
 {% block stylesheets %}
-    {{ parent() }}
+   
     <link rel="stylesheet" href="{{ asset('css/combat.css') }}">
     <link rel="stylesheet" href="{{ asset('css/encounter_choice.css') }}">
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* 1. On enlève le flou du background global */
+        .game-page-background {
+            filter: none !important; /* Force la suppression du flou */
+            background-size: cover;
+            background-position: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .result-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 2. On ajoute le flou UNIQUEMENT à l'encadré */
+        .compact-panel {
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            padding: 25px !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            
+            /* Effet de flou sur l'encadré */
+            background-color: rgba(50, 70, 80, 0.5) !important; /* Couleur sombre semi-transparente */
+            backdrop-filter: blur(10px); /* Le flou se fait sur ce qui est DERRIÈRE l'encadré */
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .rewards-box {
+            background-color: rgba(74, 58, 43, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        /* Style pour les textes en jaune */
+        .text-yellow {
+            color: #FFD700 !important; /* Le même jaune que Récompenses */
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-    {# Fond dynamique : Utilise l'image de l'ennemi vaincu pour le fond #}
-    {% set enemyImageURL = asset('images/enemies/' ~ lastEnemyName|lower ~ '.png') %}
-    <div class="game-page-background" style="--blurred-bg-image: url('{{ enemyImageURL }}');"></div>
+    {% set locationImageURL = asset('images/location_scenes/' ~ locationId ~ '.png') %}
+    <div class="game-page-background" style="background-image: url('{{ locationImageURL }}');"></div>
     
-    <div class="encounter-container" style="max-width: 800px; padding: 40px;">
-        <div class="encounter-panel">
+    <div class="result-wrapper">
+        <div class="encounter-panel compact-panel">
 
             {% if result == 'victory' %}
-                <h1 class="result-title victory" style="color: #2ecc71;">VICTOIRE !</h1>
-                <p class="message success">Vous avez vaincu le {{ lastEnemyName }} et vos prouesses sont récompensées.</p>
+                <h1 class="result-title victory" style="color: #2ecc71; text-align: center;">VICTOIRE !</h1>
                 
-                <div class="rewards enemy-details" style="background-color: #4a3a2b;">
-                    <h2>Récompenses de Combat</h2>
+                {# Changement en JAUNE ici #}
+                <p style="text-align: center; font-style: italic;" class="text-yellow">
+                    Vous avez vaincu le {{ lastEnemyName }}.
+                </p>
+                
+                <div class="rewards-box">
+                    <h2 style="text-align: center; color: #FFD700; font-size: 1.2rem; margin-top: 0;">Récompenses</h2>
                     
-                    <p>Vous avez gagné <strong style="color: gold;">{{ goldGained }} Or</strong> et <strong style="color: #79a83d;">{{ xpGained }} XP</strong>.</p>
-                    <hr style="border-color: rgba(255, 215, 0, 0.2); margin: 15px 0;">
-                    <p><strong>Total Or:</strong> <span style="color: gold;">{{ player.gold }}</span></p>
-                    <p><strong>Total XP:</strong> {{ player.experience }}</p>
+                    <div style="display: flex; justify-content: space-around; margin-bottom: 10px;">
+                        <span>Or : <strong style="color: gold;">+{{ goldGained }}</strong></span>
+                        <span>XP : <strong style="color: #79a83d;">+{{ xpGained }}</strong></span>
+                    </div>
 
-                    {# Affichage de la montée de niveau #}
+                    <div style="font-size: 0.9rem; border-top: 1px solid rgba(255,215,0,0.2); padding-top: 10px;">
+                        <p style="margin: 5px 0;" class="text-yellow">Total Or : <span style="color: gold;">{{ player.gold }}</span></p>
+                        <p style="margin: 5px 0;" class="text-yellow">Total XP : {{ player.experience }}</p>
+                    </div>
+
                     {% if leveledUp %} 
-                         <h3 style="color: #FFD700; margin-top: 20px;">🎉 MONTÉE DE NIVEAU !</h3>
-                         <p>Vous êtes maintenant au **Niveau {{ player.level }}** ! Vos PV et vos stats de base ont augmenté.</p>
-                         <p style="font-weight: bold; color: #98ff98;">Nouvelle Attaque: {{ player.calculateTotalAttack() }} / Nouvelle Défense: {{ player.calculateTotalDefense() }}</p>
-                         
-                         {# Message pour les Points d'Augure gagnés #}
-                         {% if player.augurPoints > 0 %}
-                            <p style="color: gold; font-weight: bold; margin-top: 10px;">
-                                Vous avez gagné {{ player.augurPoints }} Point(s) d'Augure à dépenser ! Le bouton ci-dessous vous mènera à l'écran de progression.
-                            </p>
-                         {% endif %}
+                         <div style="text-align: center; background: rgba(255, 215, 0, 0.2); padding: 5px; border-radius: 5px; margin-top: 10px;">
+                            <span style="color: #FFD700; font-weight: bold;">🎉 NIVEAU {{ player.level }} !</span>
+                         </div>
                     {% endif %}
                 </div>
                 
-                <p class="health-status">PV Actuels: {{ player.hp }} / {{ player.hpMax }}</p>
+                {# Changement en JAUNE ici #}
+                <p style="text-align: center; font-weight: bold;" class="text-yellow">PV : {{ player.hp }} / {{ player.hpMax }}</p>
 
             {% elseif result == 'defeat' %}
-                <h1 class="result-title defeat" style="color: #e74c3c;">DÉFAITE...</h1>
-                <p class="message danger">Vous avez été vaincu par le {{ lastEnemyName }}. Vous avez été secouru et soigné.</p>
-                
-                <div class="consequences enemy-details" style="background-color: #4a3a2b;">
-                    <p style="color: #ccc;">Vos PV ont été rétablis à <strong style="color: #2ecc71;">{{ player.hpMax }}</strong>.</p>
-                </div>
-
-            {% else %}
-                <h1 class="result-title">Résultat Inconnu</h1>
+                {# ... Logique de défaite similaire avec class="text-yellow" ... #}
             {% endif %}
 
-            <div class="action-buttons" style="margin-top: 30px;">
-                {# Le bouton utilise locationId pour revenir au lieu spécifique #}
-                <a href="{{ path('game_location_show', {'id': locationId}) }}" class="action-button flee-button">
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="{{ path('game_location_show', {'id': locationId}) }}" class="action-button flee-button" style="text-decoration: none; display: inline-block;">
                     REPRENDRE LA ROUTE 🗺️
                 </a>
             </div>

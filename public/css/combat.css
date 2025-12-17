@@ -1,239 +1,235 @@
-/* Style général de la page de combat */
-
+/* --- STYLE GÉNÉRAL ET SCÈNE --- */
 body {
-    background-color: #2b1d14; /* Fond cohérent avec le thème (marron foncé) */
+    background-color: #1a1008;
     color: #e0c8a8;
     font-family: 'Georgia', serif;
+    margin: 0;
+    overflow: hidden; /* Empêche le scroll pour une immersion totale */
+}
+
+/* Fond dynamique net (on enlève le flou ici car on l'ajoute sur l'interface) */
+.game-page-background {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: -1; 
+    background-image: var(--blurred-bg-image); 
+    background-size: cover;
+    background-position: center;
+    filter: none !important; /* Image de fond bien nette */
+    transform: scale(1);
+}
+
+/* Wrapper pour le centrage */
+.combat-scene-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    margin: 0;
-    position: relative; 
-    z-index: 0;
+    padding: 20px;
 }
 
-/* Fond de la page (image du joueur) */
-.game-page-background {
-    position: fixed;
-    top: 0;
-    left: 0;
+/* Conteneur principal "Frosted Glass" */
+.combat-container-glass {
     width: 100%;
-    height: 100%;
-    z-index: -1; 
-    
-    background-image: var(--blurred-bg-image); 
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    
-    /* CORRECTION DU FILTRE: Désaturation forte, luminosité réduite, et flou appliqué. */
-    filter: blur(5px) grayscale(80%) brightness(0.5); 
-    opacity: 1; /* Doit être 1 ou moins */
-    transform: scale(1.02);
-}
-
-.combat-container {
-    max-width: 1000px; 
-    width: 90%;
-    margin: 40px auto;
+    max-width: 950px;
+    background: rgba(26, 16, 8, 0.65); /* Semi-transparent */
+    backdrop-filter: blur(15px); /* Effet de vitre dépolie */
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 20px;
     padding: 30px;
-    /* CORRECTION : Conteneur principal en RGBA (semi-transparent 95%) */
-    background-color: rgba(18, 10, 5, 0.95); 
-    border-radius: 10px;
-    border: 3px solid #6b4e2a; /* Bordure générale de l'interface */
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
-    text-align: center;
-    position: relative;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
     z-index: 10;
 }
 
-h1 {
+.combat-header {
+    text-align: center;
     color: #FFD700;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-    margin-bottom: 30px;
-    border-bottom: 2px solid #6b4e2a;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin: 0 0 25px 0;
+    font-size: 1.8rem;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
     padding-bottom: 10px;
-    font-size: 2em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
-/* ------------------------------------------- */
-/* 1. ZONE DES COMBATTANTS (COTE À COTE) */
-/* ------------------------------------------- */
-.combat-area {
+/* --- ARÈNE ET CARTES --- */
+.combat-arena {
     display: flex;
-    justify-content: center; 
-    gap: 40px; 
-    margin-bottom: 40px;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 30px;
 }
 
 .combat-card {
-    width: 40%; 
-    min-width: 300px;
-    background-color: #3d2c20; /* Fond de la carte (marron clair) */
-    padding: 0; /* CORRECTION: Supprime le padding pour que l'image colle aux bords */
-    border-radius: 8px;
-    border: none; /* CORRECTION: Supprime la bordure latérale marron */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+}
+
+.portrait-container {
+    height: 250px;
+    overflow: hidden;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+}
+
+.entity-img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain; /* Garde le personnage entier sans le couper */
+}
+
+.entity-info {
+    padding: 15px;
+    text-align: center;
 }
 
 .entity-name {
     color: #FFD700;
-    margin: 10px 0;
-    font-size: 1.4em;
-    padding-top: 10px; 
+    margin: 0 0 10px 0;
+    font-size: 1.4rem;
+    text-shadow: 1px 1px 2px #000;
 }
 
-/* --- Portrait (Dimensons ajustées et FIT) --- */
-.portrait-box {
-    width: 100%; 
-    height: 300px; /* Grande hauteur pour le personnage entier */
-    border: none; /* Supprime la bordure interne de la boîte */
-    border-radius: 0; 
+/* --- BARRES DE VIE MODERNES --- */
+.hp-container {
+    height: 14px;
+    background: #333;
+    border-radius: 7px;
+    border: 1px solid #000;
+    margin-bottom: 8px;
     overflow: hidden;
-    margin-bottom: 10px;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-    /* Alignement parfait avec la carte */
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
 }
 
-.combat-card.player-area .portrait-box,
-.combat-card.enemy-area .portrait-box {
-    margin: 0; 
-}
-
-
-.entity-image {
-    width: 100%;
+.hp-bar {
     height: 100%;
-    /* CORRECTION CRITIQUE: Utilisation de CONTAIN pour voir l'image EN ENTIER (pas de coupe) */
-    object-fit: contain; 
+    background: linear-gradient(to right, #2ecc71, #27ae60);
+    transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* --- Bloc Stats --- */
-.stats-box {
-    width: 100%;
-    padding: 15px; /* Ajout du padding pour que les stats ne collent pas aux bords */
-    background-color: #1a1008; /* Fond sombre pour les stats */
-    border-radius: 4px;
-    border: 1px solid #4a3a2b;
-    box-sizing: border-box;
-}
-
-.hp-bar-container {
-    height: 15px;
-    background-color: #555;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 5px;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.hp-bar-fill {
-    height: 100%;
-    background-color: #2ecc71; /* Vert de vie */
-    transition: width 0.5s ease-out;
-}
-
-.hp-text {
-    font-weight: bold;
+.hp-text-yellow {
     color: #FFD700;
-    margin-top: 0;
-    margin-bottom: 10px;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    text-align: left;
-    font-size: 0.9em;
-    padding: 0 10px;
-}
-.stats-grid p {
-    margin: 3px 0;
+.stats-row, .stats-grid {
+    display: flex;
+    justify-content: space-around;
     color: #e0c8a8;
+    font-size: 0.85rem;
+    background: rgba(0,0,0,0.3);
+    padding: 5px;
+    border-radius: 5px;
 }
 
-/* ------------------------------------------- */
-/* 2. ZONE ACTIONS ET LOGS (CENTRE EN BAS) */
-/* ------------------------------------------- */
-.combat-interface {
+/* --- CONTRÔLES ET ACTIONS --- */
+.combat-controls {
     display: flex;
-    flex-direction: column; 
-    align-items: center;
     gap: 20px;
+    align-items: flex-start;
 }
 
-.action-buttons {
+.action-buttons-group {
     display: flex;
-    justify-content: center;
-    gap: 30px; 
-    width: 100%;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 180px;
 }
 
-.action-button {
-    padding: 12px 30px;
-    border: none;
-    border-radius: 6px;
-    font-size: 1.2em;
+.btn-rpg {
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
     cursor: pointer;
     text-decoration: none;
-    font-weight: bold;
-    text-transform: uppercase;
-    
-    background-color: #5a3d20;
-    border: 1px solid #4a3a2b;
-    color: #e0c8a8;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    text-align: center;
+    transition: all 0.2s;
+    border: none;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
 }
 
-.attack-action-btn {
-    background-color: #c0392b; 
-    color: white; 
-    box-shadow: 0 4px 0 #922b21;
+.btn-attack {
+    background: #c0392b;
+    color: white;
+    box-shadow: 0 5px 0 #8e271c; /* Effet 3D */
 }
 
-.flee-action-btn {
-    background-color: #3d2c20; 
+.btn-attack:hover {
+    background: #e74c3c;
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 #8e271c;
+}
+
+.btn-attack:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #8e271c;
+}
+
+.btn-attack:disabled {
+    background: #666;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-flee {
+    background: rgba(123, 91, 58, 0.8);
     color: #FFD700;
-    box-shadow: 0 4px 0 #2b1d14;
+    border: 1px solid #FFD700;
 }
 
-/* Logs */
-.combat-logs-panel {
-    width: 80%;
-    max-width: 700px;
-    /* CORRECTION : Rendre le panneau de logs semi-transparent (75%) */
-    background-color: rgba(26, 16, 8, 0.75); 
-    border: 1px solid #6b4e2a;
-    border-radius: 5px;
+.btn-flee:hover {
+    background: #FFD700;
+    color: #1a1008;
+}
+
+/* --- JOURNAL DE COMBAT --- */
+.combat-log-glass {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
     padding: 15px;
-    text-align: left;
+    border: 1px solid rgba(255, 215, 0, 0.1);
 }
 
-.logs-content {
-    max-height: 150px;
+.log-title {
+    color: #FFD700;
+    font-size: 1rem;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    padding-bottom: 5px;
+}
+
+.logs-flow {
+    height: 120px;
     overflow-y: auto;
-    font-size: 0.9em;
-    color: #fff;
+    font-size: 0.9rem;
+    color: #eee;
+    scrollbar-width: thin;
+    scrollbar-color: #6b4e2a transparent;
 }
 
 .log-entry {
     margin: 5px 0;
-    padding: 3px;
-    border-bottom: 1px dotted #444;
+    padding: 4px;
+    border-bottom: 1px dotted rgba(255,255,255,0.05);
 }
 
-/* Couleurs des logs */
-.log-success { color: #2ecc71; font-weight: bold; } 
-.log-defeat, .log-error { color: #e74c3c; font-weight: bold; } 
-
-/* Mise en évidence des dégâts */
-.damage-dealt { color: #FFD700; } 
-.damage-taken { color: #f1c40f; }
+/* Couleurs spécifiques des logs */
+.log-success { color: #2ecc71; font-weight: bold; }
+.log-defeat { color: #e74c3c; font-weight: bold; }
+.damage-dealt { color: #2ecc71; font-weight: bold; }
+.damage-taken { color: #e74c3c; font-weight: bold; }

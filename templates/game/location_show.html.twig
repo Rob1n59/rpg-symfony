@@ -137,12 +137,11 @@
     // --- FONCTION PRINCIPALE ---
     function initLocationListeners() {
         
-        // --- 1. DÉCLARATION ET SÉCURISATION DES VARIABLES LOCALES DANS LA PORTÉE ---
+        // --- 1. DÉCLARATION DES VARIABLES ---
         const logsContent = document.querySelector('.game-logs-panel .logs-content');
         const inventoryButton = document.getElementById('inventory-button');
         const inventoryModal = document.getElementById('inventory-modal');
         const inventoryAjaxContent = document.getElementById('inventory-ajax-content'); 
-        // const actionButtonsContainer = document.querySelector('.js-action-list'); // Inutile si on utilise document.body
 
         const itemTooltip = document.getElementById('item-tooltip');
         const playerHpText = document.querySelector('.player-stats-panel .hp-text'); 
@@ -158,8 +157,7 @@
         }
         scrollToBottom();
 
-        // --- 2. FONCTION D'ATTACHEMENT (Rattache les événements de l'inventaire AJAX) ---
-        // Cette fonction doit être définie ici pour accéder aux variables déclarées ci-dessus
+        // --- 2. FONCTION D'ATTACHEMENT INVENTAIRE ---
         function attachInventoryListeners() {
             const equipButton = document.getElementById('equip-button');
             const inventorySlots = document.querySelectorAll('#inventory-ajax-content .js-item-slot');
@@ -167,20 +165,15 @@
             let hideTooltipTimeout;
             const TOOLTIP_DELAY = 150; 
             
-            if (!itemTooltip || !equipButton) {
-                return; 
-            }
+            if (!itemTooltip || !equipButton) return; 
 
             const showTooltip = (e, slot) => {
                 clearTimeout(hideTooltipTimeout); 
-
-                // Remplissage du contenu
                 document.getElementById('tooltip-name').textContent = slot.dataset.name;
                 document.getElementById('tooltip-description').textContent = slot.dataset.desc;
                 document.getElementById('tooltip-attack').textContent = slot.dataset.atk;
                 document.getElementById('tooltip-defense').textContent = slot.dataset.def;
                 
-                // Logique Consommable vs Équipable
                 const itemType = slot.dataset.type;
                 const isConsumable = itemType === 'consumable';
                 const isEquipped = slot.dataset.equipped === 'true';
@@ -196,8 +189,6 @@
                 }
 
                 equipButton.dataset.playerItemId = slot.dataset.id;
-                
-                // Affichage et positionnement
                 itemTooltip.style.left = `${e.clientX + 15}px`;
                 itemTooltip.style.top = `${e.clientY - itemTooltip.offsetHeight / 2}px`;
                 itemTooltip.classList.add('visible');
@@ -211,52 +202,31 @@
                 }, TOOLTIP_DELAY); 
             };
 
-            // ÉCOUTEURS sur les slots d'inventaire
             inventorySlots.forEach(slot => {
-                const itemId = slot.dataset.id;
-                if (!itemId) return; 
-
-                slot.addEventListener('mouseover', (e) => {
-                    showTooltip(e, slot);
-                });
-
-                slot.addEventListener('mouseleave', () => {
-                    startHideTooltipTimer(); 
-                });
+                slot.addEventListener('mouseover', (e) => showTooltip(e, slot));
+                slot.addEventListener('mouseleave', startHideTooltipTimer);
             });
 
-            // ÉCOUTEURS sur l'infobulle elle-même
-            itemTooltip.addEventListener('mouseover', () => {
-                clearTimeout(hideTooltipTimeout); 
-            });
-
+            itemTooltip.addEventListener('mouseover', () => clearTimeout(hideTooltipTimeout));
             itemTooltip.addEventListener('mouseleave', () => {
                 itemTooltip.classList.add('hidden');
                 itemTooltip.classList.remove('visible');
             });
         }
 
-        // --- 3. GESTION DE L'INVENTAIRE (Ouverture) ---
+        // --- 3. GESTION DE L'INVENTAIRE ---
         if (inventoryButton && inventoryModal && inventoryAjaxContent) {
             inventoryButton.addEventListener('click', (e) => {
                 e.preventDefault(); 
-                
                 if (inventoryModal.classList.contains('hidden') || inventoryAjaxContent.innerHTML.trim() === "") { 
                     const url = inventoryButton.dataset.inventoryUrl; 
-                    
-                    inventoryAjaxContent.innerHTML = '<div style="text-align:center; padding: 50px;">Chargement de l\'inventaire...</div>';
+                    inventoryAjaxContent.innerHTML = '<div style="text-align:center; padding: 50px;">Chargement...</div>';
                     inventoryModal.classList.remove('hidden');
 
                     fetch(url, { method: 'GET' })
-                        .then(response => {
-                            if (!response.ok) { 
-                                throw new Error('Erreur de chargement: ' + response.statusText); 
-                            }
-                            return response.text(); 
-                        })
+                        .then(response => response.text())
                         .then(html => {
                             inventoryAjaxContent.innerHTML = html;
-                            
                             const closeButton = document.getElementById('close-inventory-button');
                             if (closeButton) {
                                 closeButton.addEventListener('click', () => {
@@ -264,14 +234,8 @@
                                     itemTooltip.classList.add('hidden'); 
                                 });
                             }
-                            // CRITIQUE : Rattachement des listeners après chargement AJAX
                             attachInventoryListeners(); 
-                        })
-                        .catch(error => {
-                            console.error('Erreur de chargement de l\'inventaire:', error);
-                            inventoryAjaxContent.innerHTML = '<div style="color: red; padding: 20px;">Erreur lors du chargement.</div>';
                         });
-                        
                 } else {
                     inventoryModal.classList.remove('hidden');
                 }
@@ -285,151 +249,86 @@
             });
         }
         
-        // --- 4. GESTION DE TOUTES LES ACTIONS AJAX (Délégation sur le body) ---
-        document.body.addEventListener('click', function(e) {
+        // --- 4. DÉLÉGATION DE CLIC ROBUSTE (POUR ÉVITER LA PAGE NOIRE) ---
+        document.body.onclick = function(e) {
             
-            // Cas A : Clic sur le bouton EQUIPER/UTILISER (dans le Tooltip)
-            const tooltipActionButton = e.target.closest('#equip-button');
+            // On cherche n'importe quel lien avec un ID d'option (101, 102, 103)
+            const actionLink = e.target.closest('a[data-option-id]');
             
-            if (tooltipActionButton) {
-                e.preventDefault(); 
-                
-                const playerItemId = tooltipActionButton.dataset.playerItemId;
-                itemTooltip.classList.add('hidden'); 
+            if (actionLink) {
+                const optionId = actionLink.getAttribute('data-option-id');
 
-                const isConsuming = tooltipActionButton.classList.contains('consume-action');
-                
-                let url;
-                let isEquipAction = false;
-                
-                if (isConsuming) {
-                    url = `{{ path('game_consume_item', {'playerItemId': 'PLAYER_ITEM_ID'}) }}`.replace('PLAYER_ITEM_ID', playerItemId);
-                } else {
-                    url = `{{ path('game_equip_item', {'playerItemId': 'PLAYER_ITEM_ID'}) }}`.replace('PLAYER_ITEM_ID', playerItemId);
-                    isEquipAction = true;
-                }
-                
-                fetch(url, { method: 'POST' })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.text().then(text => { throw new Error(text || 'Réponse non valide du serveur.'); });
-                        }
-                        return response.json(); 
-                    })
+                // SÉCURITÉ CRITIQUE : CHERCHER DES RESSOURCES (102)
+                if (optionId === "102") {
+                    e.preventDefault(); // STOP LA NAVIGATION IMMÉDIATEMENT
+                    
+                    fetch(actionLink.href, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest' } }) 
+                    .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            
+                            if (playerGoldValue) playerGoldValue.textContent = data.playerStats.gold; 
+                            if (playerAttackStat) playerAttackStat.innerHTML = `<strong>Attaque:</strong> ${data.playerStats.attack}`;
+                            if (playerDefenseStat) playerDefenseStat.innerHTML = `<strong>Défense:</strong> ${data.playerStats.defense}`;
+
+                            if (logsContent) {
+                                logsContent.innerHTML += `<p class="log-entry alert-${data.flashType}">${data.message}</p>`;
+                                scrollToBottom();
+                            }
+                            if (inventoryAjaxContent) inventoryAjaxContent.innerHTML = ''; 
+                        }
+                    })
+                    .catch(error => console.error('Erreur Action 102:', error));
+                    return false;
+                }
+            }
+
+            // Cas Équipement/Consommation (Tooltip)
+            const tooltipActionButton = e.target.closest('#equip-button');
+            if (tooltipActionButton) {
+                e.preventDefault();
+                const playerItemId = tooltipActionButton.dataset.playerItemId;
+                itemTooltip.classList.add('hidden'); 
+                const isConsuming = tooltipActionButton.classList.contains('consume-action');
+                
+                let url = isConsuming 
+                    ? `{{ path('game_consume_item', {'playerItemId': 'PLAYER_ITEM_ID'}) }}`.replace('PLAYER_ITEM_ID', playerItemId)
+                    : `{{ path('game_equip_item', {'playerItemId': 'PLAYER_ITEM_ID'}) }}`.replace('PLAYER_ITEM_ID', playerItemId);
+                
+                fetch(url, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
                             if (isConsuming) {
-                                // Mise à jour des PV visibles (Consommation)
-                                const playerHpText = document.querySelector('.player-stats-panel .hp-text'); // Re-ciblage sécurité
-                                const playerHpFill = document.querySelector('.player-stats-panel .hp-bar-fill'); // Re-ciblage sécurité
-                                
                                 playerHpText.innerHTML = `<strong>HP:</strong> ${data.newHp} / ${data.newHpMax}`;
-                                const newHpPercentage = (data.newHp / data.newHpMax) * 100;
-                                playerHpFill.style.width = `${newHpPercentage}%`;
-
-                                // Force le rechargement de la modale pour mettre à jour la quantité
+                                playerHpFill.style.width = `${(data.newHp / data.newHpMax) * 100}%`;
                                 inventoryAjaxContent.innerHTML = ''; 
-                                setTimeout(() => {
-                                    inventoryButton.click(); 
-                                }, 50); 
-                                
-
-                            } else if (isEquipAction) {
-                                // Mise à jour des statistiques ATK/DEF (Équipement)
+                                setTimeout(() => inventoryButton.click(), 50); 
+                            } else {
                                 playerAttackStat.innerHTML = `<strong>Attaque:</strong> ${data.newAttack}`;
                                 playerDefenseStat.innerHTML = `<strong>Défense:</strong> ${data.newDefense}`;
-                                
-                                const urlInventory = inventoryButton.dataset.inventoryUrl; 
-                                fetch(urlInventory, { method: 'GET' })
-                                    .then(response => response.text())
-                                    .then(html => {
-                                        inventoryAjaxContent.innerHTML = html;
-                                        attachInventoryListeners(); 
-                                    });
+                                fetch(inventoryButton.dataset.inventoryUrl).then(r => r.text()).then(html => {
+                                    inventoryAjaxContent.innerHTML = html;
+                                    attachInventoryListeners();
+                                });
                             }
-
                             if (logsContent) {
-                                logsContent.innerHTML += `<p class="log-entry alert-success">${data.message || 'Action réussie'}</p>`;
-                                scrollToBottom(); 
-                            }
-                            
-                        } else {
-                            if (logsContent) {
-                                logsContent.innerHTML += `<p class="log-entry alert-warning">Erreur : ${data.message}</p>`;
+                                logsContent.innerHTML += `<p class="log-entry alert-success">${data.message}</p>`;
                                 scrollToBottom();
                             }
                         }
-                    })
-                    .catch(error => {
-                        console.error("Erreur AJAX:", error);
-                        if (logsContent) {
-                            logsContent.innerHTML += `<p class="log-entry alert-danger">Échec de l'action (Erreur réseau/JSON).</p>`;
-                            scrollToBottom();
-                        }
                     });
-                return; 
             }
-            
-            // Cas B : Clic sur l'action 102 (Chercher des ressources)
-            const targetAction = e.target.closest('a[data-option-id="102"]');
-            
-            if (targetAction) { 
-                e.preventDefault(); 
-                
-                fetch(targetAction.href, { method: 'GET' }) 
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        
-                        // Mise à jour de l'or (seul affichage direct requis ici)
-                        if (playerGoldValue) {
-                            playerGoldValue.textContent = data.playerStats.gold; 
-                        }
-                        
-                        playerAttackStat.innerHTML = `<strong>Attaque:</strong> ${data.playerStats.attack}`;
-                        playerDefenseStat.innerHTML = `<strong>Défense:</strong> ${data.playerStats.defense}`;
-
-                        if (logsContent) {
-                            logsContent.innerHTML += `<p class="log-entry alert-${data.flashType}">${data.message}</p>`;
-                            scrollToBottom();
-                        }
-                        
-                        // Nettoyage de l'inventaire pour forcer le rechargement si un item a été looté
-                        if (inventoryAjaxContent) {
-                            inventoryAjaxContent.innerHTML = ''; 
-                        }
-
-                    } else {
-                        if (logsContent) {
-                            logsContent.innerHTML += `<p class="log-entry alert-danger">Action échouée.</p>`;
-                            scrollToBottom();
-                        }
-                    }
-                })
-                .catch(error => console.error('Erreur AJAX pour l\'action 102:', error));
-                
-                return; 
-            }
-        });
+        };
     } 
     
-    // Déclenche l'initialisation après le chargement du DOM.
+    // Initialisation robuste sur pageshow
     window.addEventListener('pageshow', initLocationListeners);
 
+    // Système de force-reload
     if ({{ app.session.get('force_page_reload') ? 'true' : 'false' }}) {
-        
-        // Supprime le flag via une requête POST asynchrone pour ne pas le réutiliser
         fetch('{{ path("remove_force_reload_flag") }}', { method: 'POST' })
-            .then(() => {
-                // Force le rechargement complet du navigateur. 'true' garantit un chargement propre.
-                window.location.reload(true); 
-            })
-            .catch(error => {
-                // Fallback: s'il y a un souci, on force quand même le rechargement.
-                console.error("Erreur lors de la suppression du flag, rechargement forcé: ", error);
-                window.location.reload(true);
-            });
+            .then(() => window.location.reload(true))
+            .catch(() => window.location.reload(true));
     }
     
     </script>

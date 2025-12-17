@@ -18,8 +18,8 @@
             <h1>Un {{ enemy.name }} apparaît !</h1>
             
             <div class="enemy-details">
-                <img src="{{ asset('images/enemies/' ~ enemy.name|lower ~ '.png') }}" alt="{{ enemy.name }}" class="enemy-portrait">
-                
+               <img src="{{ asset('images/enemies/' ~ enemy.image) }}" alt="{{ enemy.name }}" class="enemy-portrait">
+               
                 <p class="enemy-stats">
                     <strong>PV:</strong> {{ enemy.hp }} <br>
                     <strong>Attaque:</strong> {{ enemy.attack }} <br>

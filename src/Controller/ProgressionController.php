@@ -36,16 +36,16 @@ class ProgressionController extends AbstractController
             return $this->redirectToRoute('choose_hero');
         }
         
-        // NOUVEAU : Récupérer le dernier ID de lieu visité
-        $lastLocationId = $session->get('current_location_id');
+        // On récupère l'ID du lieu en session (utilisé pour le fond et le retour)
+        // On le nomme 'locationId' pour correspondre au template Twig
+        $locationId = $session->get('current_location_id');
 
-        // Si le joueur n'a pas de points à dépenser, le renvoyer au lieu (si l'ID est disponible)
+        // Si le joueur n'a plus de points, on le redirige immédiatement
         if ($player->getAugurPoints() <= 0) {
             $this->addFlash('info', 'Vous n\'avez pas de Points d\'Augure à dépenser.');
             
-            // CRITIQUE : Rediriger vers le lieu si l'ID est disponible, sinon vers la carte générale
-            if ($lastLocationId) {
-                 return $this->redirectToRoute('game_location_show', ['id' => $lastLocationId]);
+            if ($locationId) {
+                 return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
             }
             return $this->redirectToRoute('game_explore');
         }
@@ -54,13 +54,11 @@ class ProgressionController extends AbstractController
         $currentLevel = $player->getLevel();
         $xpRequiredCurrent = $xpService->getRequiredExpForNextLevel($currentLevel - 1); 
         $xpRequiredNext = $xpService->getRequiredExpForNextLevel($currentLevel);
-        // ---------------------------
 
         return $this->render('game/level_up.html.twig', [
             'player' => $player,
             'augurValues' => self::AUGUR_VALUE,
-            // PASSAGE DE L'ID DU LIEU À LA VUE
-            'lastLocationId' => $lastLocationId, 
+            'locationId' => $locationId, // Variable corrigée pour Twig
             'xpRequiredCurrent' => $xpRequiredCurrent, 
             'xpRequiredNext' => $xpRequiredNext, 
         ]);

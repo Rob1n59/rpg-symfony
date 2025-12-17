@@ -28,29 +28,77 @@ class AppFixtures extends Fixture
 
         $manager->persist($player);
 
+        $snake = new Enemy();
+        $snake->setName('Serpent des Herbes')
+              ->setHp(25)
+              ->setHpMax(25) 
+              ->setAttack(4)
+              ->setDefense(0)
+              ->setGoldReward(5)
+              ->setXpReward(10)
+              ->setDangerLevel('Très faible') 
+              ->setImage('serpent_des_herbes.png');
+        $manager->persist($snake);
+
         $goblin = new Enemy();
         $goblin->setName('Goblin')
-               ->setHp(30)
+               ->setHp(35) 
+               ->setHpMax(35) 
                ->setAttack(5)
                ->setDefense(2)
                ->setGoldReward(10)
-               ->setXpReward(5);
+               ->setXpReward(25) 
+               ->setDangerLevel('Faible') 
+               ->setImage('goblin.png');
         $manager->persist($goblin);
 
-        $dragon = new Enemy();
-        $dragon->setName('Dragon')
-               ->setHp(100)
-               ->setAttack(20)
-               ->setDefense(10)
-               ->setGoldReward(100)
-               ->setXpReward(50);
-        $manager->persist($dragon);
+        $spectre = new Enemy();
+        $spectre->setName('Spectre Ancien')
+               ->setHp(90)
+               ->setHpMax(90)
+               ->setAttack(14)
+               ->setDefense(6)
+               ->setGoldReward(40)
+               ->setXpReward(100)
+               ->setDangerLevel('Élevé') 
+               ->setImage('spectre_ancien.png');
+        $manager->persist($spectre);
+
+        $golem = new Enemy();
+        $golem->setName('Golem de Glace')
+               ->setHp(180)
+               ->setHpMax(180)
+               ->setAttack(22)
+               ->setDefense(12)
+               ->setGoldReward(80)
+               ->setXpReward(200)
+               ->setDangerLevel('Très Élevé') 
+               ->setImage('golem_de_glace.png');
+        $manager->persist($golem);
 
         $forest = new Location();
-        $forest->setName('Forêt enchantée')
+        $forest->setName('Forêt d’Alden') // Renommé
                ->setDescription('Un lieu mystérieux rempli de créatures.')
-               ->setDangerLevel(1);
+               ->setDangerLevel('2'); // <-- Mis à jour
         $manager->persist($forest);
+
+        $plains = new Location();
+        $plains->setName('Plaine Verdoyante')
+               ->setDescription('Des champs à perte de vue, idéal pour l\'exploration initiale.')
+               ->setDangerLevel('1'); // <-- Nouveau lieu
+        $manager->persist($plains);
+        
+        $ruins = new Location();
+        $ruins->setName('Ruines d’Eldamar')
+               ->setDescription('D\'anciennes ruines où errent de puissants esprits.')
+               ->setDangerLevel('3'); // <-- Nouveau lieu
+        $manager->persist($ruins);
+
+        $mountains = new Location();
+        $mountains->setName('Montagnes du Nord')
+               ->setDescription('Un col enneigé, très dangereux.')
+               ->setDangerLevel('4'); // <-- Nouveau lieu
+        $manager->persist($mountains);
 
         $dungeon = new Location();
         $dungeon->setName('Donjon sombre')

@@ -434,7 +434,7 @@ public function consumeItem(
                 $this->addFlash('info', 'Vous continuez votre chemin sans encombre.');
                 return $this->redirectToRoute('game_location_show', ['id' => $locationId]);
 
-            case 102: // Chercher des ressources (LOOT COMPLET)
+            case 102: 
                 
                 $chanceToFind = rand(1, 100);
 

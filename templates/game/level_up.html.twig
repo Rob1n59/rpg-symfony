@@ -3,123 +3,122 @@
 {% block title %}Progression : Dépenser des Points d'Augure{% endblock %}
 
 {% block stylesheets %}
-    {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('css/level_up.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/game_location_show.css') }}"> 
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/level_up.css') }}">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Background net comme sur la page résultat */
+        .game-page-background {
+            filter: none !important;
+            background-size: cover;
+            background-position: center;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+        }
+
+        /* Utilisation du Glassmorphism pour le panneau */
+        .level-up-panel {
+            background-color: rgba(26, 16, 8, 0.6) !important; 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+        }
+
+        .text-yellow {
+            color: #FFD700 !important;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-    {# Fond flou par défaut #}
-    {# Utilisation de lastLocationId si disponible, sinon fallback sur la session ou l'ID 1 #}
-    {% set currentLocId = lastLocationId ?? app.session.get('current_location_id') ?? 1 %}
-    <div class="game-page-background" style="--blurred-bg-image: url('{{ asset('images/location_scenes/' ~ currentLocId ~ '.png') }}');"></div>
+    {# Utilisation de locationId transmise par le controller #}
+    {% set currentLocId = locationId ?? app.session.get('current_location_id') ?? 1 %}
+    <div class="game-page-background" style="background-image: url('{{ asset('images/location_scenes/' ~ currentLocId ~ '.png') }}');"></div>
 
-    <div class="level-up-container">
-        <div class="level-up-panel" style="z-index: 1001;">
-            <h1 class="title">Niveau Supérieur !</h1>
-            
-            <p class="current-level">Niveau Actuel : <strong>{{ player.level }}</strong></p>
-            
-            {# ========================================== #}
-            {# NOUVEAU : BARRE DE PROGRESSION D'EXPÉRIENCE #}
-            {# ========================================== #}
-            
-            {% set xpOnLevel = player.experience - xpRequiredCurrent %}
-            {% set xpNeededForLevel = xpRequiredNext - xpRequiredCurrent %}
-            {% set xpDenominator = xpNeededForLevel > 0 ? xpNeededForLevel : 1 %}
-            {% set xpPercentage = (xpOnLevel / xpDenominator) * 100 %}
+    <div class="level-up-container">
+        <div class="level-up-panel">
+            <h1 class="title">Niveau Supérieur !</h1>
+            
+            <p class="current-level text-yellow">Niveau Actuel : <strong>{{ player.level }}</strong></p>
+            
+            {# Barre de progression XP #}
+            {% set xpOnLevel = player.experience - xpRequiredCurrent %}
+            {% set xpNeededForLevel = xpRequiredNext - xpRequiredCurrent %}
+            {% set xpDenominator = xpNeededForLevel > 0 ? xpNeededForLevel : 1 %}
+            {% set xpPercentage = (xpOnLevel / xpDenominator) * 100 %}
 
-            <div class="xp-progress-bar-area">
-                <div class="xp-bar-container">
-                    {% set safePercentage = xpPercentage > 100 ? 100 : xpPercentage %}
-                    <div class="xp-bar-fill" style="width: {{ safePercentage|default(0) }}%;"></div>
-                </div>
-                <p class="xp-text">
-                    {{ xpOnLevel|default(0) }} / {{ xpNeededForLevel|default(0) }} XP (prochain niveau)
-                </p>
-            </div>
-            {# ========================================== #}
-            
-            <p class="points-available">Points d'Augure disponibles : <strong>{{ player.augurPoints }}</strong></p>
-            
-            <div class="stat-choices">
-                
-                {% for stat, value in augurValues %}
-                    <div class="stat-card">
-                        
-                        {# Formulaire pour appliquer la statistique #}
-                        <form method="POST" action="{{ path('progression_apply_stat', {'statName': stat}) }}">
-                            <h2 class="stat-name">{{ stat|upper }}</h2>
-                            
-                            {% if stat == 'attack' %}
-                                <p class="current-stat">Actuel: {{ player.attack }}</p>
-                                <p class="increase-value">+{{ value }} ATK de Base</p>
-                            {% elseif stat == 'defense' %}
-                                <p class="current-stat">Actuel: {{ player.defense }}</p>
-                                <p class="increase-value">+{{ value }} DEF de Base</p>
-                            {% elseif stat == 'hpmax' %}
-                                <p class="current-stat">Actuel: {{ player.hpMax }}</p>
-                                <p class="increase-value">+{{ value }} PV Max</p>
-                            {% endif %}
+            <div class="xp-progress-bar-area">
+                <div class="xp-bar-container">
+                    {% set safePercentage = xpPercentage > 100 ? 100 : xpPercentage %}
+                    <div class="xp-bar-fill" style="width: {{ safePercentage|default(0) }}%;"></div>
+                </div>
+                <p class="xp-text text-yellow">
+                    {{ xpOnLevel|default(0) }} / {{ xpNeededForLevel|default(0) }} XP (prochain niveau)
+                </p>
+            </div>
+            
+            <p class="points-available text-yellow">Points d'Augure disponibles : <strong>{{ player.augurPoints }}</strong></p>
+            
+            <div class="stat-choices">
+                {% for stat, value in augurValues %}
+                    <div class="stat-card">
+                        <form method="POST" action="{{ path('progression_apply_stat', {'statName': stat}) }}">
+                            <h2 class="stat-name">{{ stat|upper }}</h2>
+                            
+                            {% if stat == 'attack' %}
+                                <p class="current-stat">Actuel: {{ player.attack }}</p>
+                                <p class="increase-value">+{{ value }} ATK</p>
+                            {% elseif stat == 'defense' %}
+                                <p class="current-stat">Actuel: {{ player.defense }}</p>
+                                <p class="increase-value">+{{ value }} DEF</p>
+                            {% elseif stat == 'hpmax' %}
+                                <p class="current-stat">Actuel: {{ player.hpMax }}</p>
+                                <p class="increase-value">+{{ value }} PV Max</p>
+                            {% endif %}
 
-                            <button type="submit" class="action-button choose-stat-btn" 
-                                {% if player.augurPoints <= 0 %}disabled{% endif %}>
-                                Dépenser 1 Point
-                            </button>
-                        </form>
-                    </div>
-                {% endfor %}
-            </div>
-            
-            {% if player.augurPoints <= 0 %}
-                {# DÉBUT CORRECTION CRITIQUE : Calcul de la route de retour #}
-                {% set returnRoute = path('game_explore') %}
-                
-                {% if lastLocationId %}
-                    {% set returnRoute = path('game_location_show', {'id': lastLocationId}) %}
+                            <button type="submit" class="choose-stat-btn" 
+                                {% if player.augurPoints <= 0 %}disabled{% endif %}>
+                                Améliorer
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div style="margin-top: 20px;">
+                {% if player.augurPoints <= 0 %}
+                    <a href="{{ path('game_location_show', {'id': currentLocId}) }}" class="continue-btn">
+                        REPRENDRE LA ROUTE 🗺️
+                    </a>
                 {% endif %}
+            </div>
 
-                <a href="{{ returnRoute }}" class="action-button continue-btn">
-                    Retourner au lieu d'exploration
-                </a>
-            {# FIN CORRECTION CRITIQUE #}
-            {% endif %}
-
-            {# Affichage des messages flash (Succès ou Erreur) #}
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    <div class="flash-message flash-{{ label }}">
-                        {{ message|raw }}
-                    </div>
-                {% endfor %}
-            {% endfor %}
-        </div>
-    </div>
+            {# Messages flash #}
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="flash-message flash-{{ label }}">
+                        {{ message|raw }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Masquer les overlays de la page précédente pour un affichage propre
-            const inventoryModal = document.getElementById('inventory-modal');
-            const itemTooltip = document.getElementById('item-tooltip');
-            
-            setTimeout(() => {
-                if (inventoryModal && !inventoryModal.classList.contains('hidden')) {
-                    inventoryModal.classList.add('hidden');
-                }
-                if (itemTooltip && !itemTooltip.classList.contains('hidden')) {
-                    itemTooltip.classList.add('hidden');
-                }
-                
-                const genericOverlay = document.querySelector('.modal-overlay:not(.hidden)');
-                if (genericOverlay) {
-                    genericOverlay.classList.add('hidden');
-                }
-
-                window.dispatchEvent(new Event('resize'));
-            }, 100);
-        });
-    </script>
+    {{ parent() }}
+    <script>
+        // On s'assure que rien ne bloque l'affichage
+        document.addEventListener('DOMContentLoaded', function() {
+            window.dispatchEvent(new Event('resize'));
+        });
+    </script>
 {% endblock %}

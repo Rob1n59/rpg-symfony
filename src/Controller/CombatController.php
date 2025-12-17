@@ -230,6 +230,7 @@ public function attack(
         $session->remove('last_combat_level');
         $session->remove('last_enemy_name');
         $session->remove('has_augur_points'); // Nettoyer le flag après lecture
+        $session->set('force_page_reload', true);
 
         
         // Si défaite et que le joueur est mort, on le remet en vie pour l'exploration
